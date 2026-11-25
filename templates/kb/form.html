@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Artikel bearbeiten · Wissensbasis{% endblock %}
+{% block content %}
+<h1>{% if article %}Artikel bearbeiten{% else %}Neuer Artikel{% endif %}</h1>
+{% if article and article.source_ticket_id %}
+  <p class="muted">Automatisch erstellt aus Ticket <a href="{% url 'tickets:detail' article.source_ticket_id %}">#{{ article.source_ticket_id }}</a>. Bitte persönliche Angaben entfernen und den Text allgemein verständlich formulieren.</p>
+{% endif %}
+
+{% if article and article.status == "draft" and article.source_ticket.organization and not article.organization %}
+  <div class="message">Das Ticket stammt von <strong>{{ article.source_ticket.organization }}</strong>. Soll der Artikel nur für diese Organisation sichtbar sein, wähle sie bei „Nur sichtbar für“. Ohne Auswahl können ihn alle lesen.</div>
+{% endif %}
+
+{% if similar %}
+  <div class="message">
+    <strong>Gibt es diesen Artikel schon?</strong> Diese veröffentlichten Artikel sind ähnlich:
+    <ul>
+      {% for a in similar %}<li><a href="{{ a.get_absolute_url }}" target="_blank" rel="noopener">{{ a.title }}</a></li>{% endfor %}
+    </ul>
+    Falls ja, ergänze lieber den bestehenden Artikel und archiviere diesen Entwurf.
+  </div>
+{% endif %}
+
+<div class="grid-main">
+  <form method="post" class="panel">{% csrf_token %}
+    {% include "_form.html" %}
+    <div class="actions">
+      <button class="btn{% if not article or article.status == 'published' %} primary{% endif %}" type="submit">Speichern</button>
+      {% if article and article.status != "published" %}
+        <button class="btn primary" type="submit" name="publish" value="1">Speichern und freigeben</button>
+      {% endif %}
+      <a class="btn" href="{% if article %}{{ article.get_absolute_url }}{% else %}{% url 'kb:list' %}{% endif %}">Abbrechen</a>
+    </div>
+  </form>
+
+  <aside>
+    <section class="panel">
+      <h2>Formatierung</h2>
+      <pre class="hint">**fett**   *kursiv*
+## Überschrift
+- Aufzählung
+1. Schritt eins
+2. Schritt zwei
+`Befehl oder Menüpunkt`
+[Linktext](https://...)</pre>
+    </section>
+    {% if article %}
+      <section class="panel">
+        <h2>Bilder und Dateien</h2>
+        {% for f in files %}
+          <div class="file-row">
+            <div>{{ f.name }}</div>
+            <input type="text" readonly value="{{ f.markdown }}" onclick="this.select()">
+            <form method="post" action="{% url 'kb:file_delete' f.pk %}">{% csrf_token %}
+              <button class="linklike danger-text" type="submit">löschen</button>
+            </form>
+          </div>
+        {% empty %}
+          <p class="muted small">Noch keine Dateien.</p>
+        {% endfor %}
+        <p class="muted small">Die Zeile unter dem Dateinamen an die gewünschte Stelle im Text kopieren.</p>
+        <form method="post" enctype="multipart/form-data" action="{% url 'kb:upload' article.pk %}">{% csrf_token %}
+          {% include "_form.html" with form=file_form %}
+          <button class="btn small" type="submit">Hochladen</button>
+        </form>
+      </section>
+    {% else %}
+      <p class="muted small">Bilder lassen sich nach dem ersten Speichern hochladen.</p>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

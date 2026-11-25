@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Neues Ticket · Helpdesk{% endblock %}
+{% block content %}
+<h1>Neues Ticket</h1>
+{% if request_forms %}
+  <section class="panel">
+    <h2>Geht es um eine dieser Anfragen?</h2>
+    <div class="form-picker">
+      {% for f in request_forms %}
+        <a class="btn" href="{% url 'tickets:request_form' f.pk %}">{{ f.name }}</a>
+      {% endfor %}
+    </div>
+    <p class="muted small">Die Formulare fragen gleich alles Nötige ab. Für alles andere das Formular darunter verwenden.</p>
+  </section>
+{% endif %}
+<div class="grid-main">
+  <form method="post" enctype="multipart/form-data" class="panel">{% csrf_token %}
+    {% include "_form.html" %}
+    <div class="actions">
+      <button class="btn primary" type="submit">Ticket anlegen</button>
+      <a class="btn" href="{% url 'tickets:list' %}">Abbrechen</a>
+    </div>
+  </form>
+  <aside class="panel" id="kb-suggest" data-url="{% url 'kb:suggest' %}">
+    <h2>Schon gelöst?</h2>
+    <p class="muted" id="kb-suggest-hint">Während du den Betreff eingibst, erscheinen hier passende Artikel aus der Wissensbasis.</p>
+    <div id="kb-suggest-results"></div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · Projekte{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{{ project.name }}</h1>
+  <span class="badge proj-{{ project.status }}">{{ project.get_status_display }}</span>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'projects:edit' project.pk %}">Projekt bearbeiten</a>
+  <a class="btn primary" href="{% url 'projects:task_create' project.pk %}">Neue Aufgabe</a>
+</div>
+{% if project.description %}<p class="text lead">{{ project.description|urlize|linebreaksbr }}</p>{% endif %}
+<p class="muted">
+  {% if project.owner %}Projektleitung: {{ project.owner.get_full_name|default:project.owner.username }}{% endif %}
+  {% if project.start_date %} · Start {{ project.start_date|date:"d.m.Y" }}{% endif %}
+  {% if project.due_date %} · Fällig {{ project.due_date|date:"d.m.Y" }}{% endif %}
+</p>
+
+<div class="board" data-url="{% url 'projects:reorder' project.pk %}" data-csrf="{{ csrf_token }}">
+  {% for col in columns %}
+    <section class="column">
+      <header>
+        <h2>{{ col.label }}</h2>
+        <span class="count js-count">{{ col.tasks|length }}</span>
+        <a class="add" href="{% url 'projects:task_create' project.pk %}?status={{ col.key }}" title="Aufgabe hinzufügen">+</a>
+      </header>
+      <div class="column-body" data-status="{{ col.key }}">
+        {% for task in col.tasks %}
+          <div class="card-task prio-border-{{ task.priority }}" draggable="true" data-id="{{ task.pk }}">
+            <button type="button" class="move-btn" title="Verschieben: auswählen, dann Spalte antippen" aria-label="Verschieben">⇄</button>
+            <a href="{{ task.get_absolute_url }}" draggable="false">{{ task.title }}</a>
+            <div class="muted small">
+              {% if task.assignee %}{{ task.assignee.get_full_name|default:task.assignee.username }}{% endif %}
+              {% if task.due_date %}{% if task.assignee %} · {% endif %}bis {{ task.due_date|date:"d.m." }}{% endif %}
+              {% if task.milestone %}<br>◆ {{ task.milestone.name }}{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+</div>
+<p class="muted small">Karten mit der Maus zwischen den Spalten ziehen. Auf dem Handy: Karte mit ⇄ auswählen, dann die Zielspalte antippen.</p>
+
+<div class="grid-main">
+  <section class="panel">
+    <h2>Zeitachse</h2>
+    {% if timeline %}
+      <div class="timeline">
+        <div class="timeline-scale"><span>{{ timeline.first|date:"d.m.Y" }}</span><span>{{ timeline.last|date:"d.m.Y" }}</span></div>
+        {% for mark in timeline.marks %}
+          <div class="timeline-row">
+            <div class="timeline-label">◆ {{ mark.milestone.name }}</div>
+            <div class="timeline-track">
+              {% if timeline.today != None %}<i class="today" style="left: {{ timeline.today }}%"></i>{% endif %}
+              <b class="diamond{% if mark.milestone.done %} done{% endif %}" style="left: {{ mark.left }}%" title="{{ mark.milestone.due_date|date:'d.m.Y' }}"></b>
+            </div>
+          </div>
+        {% endfor %}
+        {% for bar in timeline.bars %}
+          <div class="timeline-row">
+            <div class="timeline-label"><a href="{{ bar.task.get_absolute_url }}">{{ bar.task.title }}</a></div>
+            <div class="timeline-track">
+              {% if timeline.today != None %}<i class="today" style="left: {{ timeline.today }}%"></i>{% endif %}
+              <span class="tl-bar tl-{{ bar.task.status }}{% if bar.late %} late{% endif %}" style="left: {{ bar.left }}%; width: {{ bar.width }}%" title="{{ bar.start|date:'d.m.' }}–{{ bar.end|date:'d.m.Y' }}"></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <p class="muted small">Die senkrechte Linie ist heute. Rot heißt: Termin vorbei und nicht erledigt.</p>
+    {% else %}
+      <p class="muted">Sobald Aufgaben ein Fälligkeitsdatum oder Meilensteine einen Termin haben, erscheinen sie hier.</p>
+    {% endif %}
+  </section>
+
+  <aside class="panel">
+    <h2>Meilensteine</h2>
+    {% for m in milestones %}
+      <div class="milestone">
+        <div>
+          <strong{% if m.done %} class="struck"{% endif %}>{{ m.name }}</strong>
+          {% if m.late %}<span class="badge overdue">überfällig</span>{% endif %}
+          <div class="muted small">{% if m.due_date %}{{ m.due_date|date:"d.m.Y" }} · {% endif %}{{ m.task_done }} von {{ m.task_total }} Aufgaben erledigt</div>
+        </div>
+        <form method="post" action="{% url 'projects:milestone_change' m.pk %}">{% csrf_token %}
+          <button class="btn small" type="submit">{% if m.done %}Wieder öffnen{% else %}Erreicht{% endif %}</button>
+          <button class="linklike danger-text" type="submit" name="delete" value="1">löschen</button>
+        </form>
+      </div>
+    {% empty %}
+      <p class="muted small">Noch keine Meilensteine.</p>
+    {% endfor %}
+    <form method="post" action="{% url 'projects:milestone_add' project.pk %}" class="stack">{% csrf_token %}
+      {% include "_form.html" with form=milestone_form %}
+      <button class="btn small" type="submit">Meilenstein hinzufügen</button>
+    </form>
+  </aside>
+</div>
+
+{% if tickets %}
+  <section class="panel">
+    <h2>Zugeordnete Tickets</h2>
+    {% for t in tickets %}
+      <a class="row-link" href="{{ t.get_absolute_url }}">
+        <span class="muted">#{{ t.pk }}</span> {{ t.title }}
+        <span class="badge status-{{ t.status }}">{{ t.get_status_display }}</span>
+      </a>
+    {% endfor %}
+  </section>
+{% endif %}
+{% endblock %}

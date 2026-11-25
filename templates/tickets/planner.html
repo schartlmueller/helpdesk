@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}Wochenplanung · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Wochenplanung <span class="muted">KW {{ week_number }} · {{ first_day|date:"d.m." }}–{{ last_day|date:"d.m.Y" }}</span></h1>
+  <span class="spacer"></span>
+  <a class="btn" href="?woche={{ previous|date:'Y-m-d' }}{% if team_id %}&amp;team={{ team_id }}{% endif %}">← Vorige</a>
+  <a class="btn" href="{% url 'tickets:planner' %}{% if team_id %}?team={{ team_id }}{% endif %}">Heute</a>
+  <a class="btn" href="?woche={{ following|date:'Y-m-d' }}{% if team_id %}&amp;team={{ team_id }}{% endif %}">Nächste →</a>
+</div>
+
+<div class="filters">
+  {% if teams %}
+    <form method="get">
+      <input type="hidden" name="woche" value="{{ monday|date:'Y-m-d' }}">
+      <select name="team" onchange="this.form.submit()">
+        <option value="">Alle Bearbeiter</option>
+        {% for t in teams %}<option value="{{ t.pk }}"{% if team_id == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }}</option>{% endfor %}
+      </select>
+    </form>
+  {% endif %}
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'tickets:recurring' %}">Wiederkehrende Tickets</a>
+  <a class="btn" href="{% url 'tickets:planner_settings' %}">Kapazität und Outlook-Kalender</a>
+</div>
+
+<div class="planner" data-url="{% url 'tickets:planner_move' %}" data-csrf="{{ csrf_token }}">
+  <div class="planner-main">
+    <section class="panel plan-drop pool-zone" data-date="" data-keep="1" data-pool="{{ monday|date:'Y-m-d' }}">
+      <h2>Wochenpool KW {{ week_number }} <span class="muted">{{ pool|length }} ohne festen Tag</span> <a class="btn small" href="{% url 'tickets:pool' %}?woche={{ monday|date:'Y-m-d' }}">Pool öffnen</a></h2>
+      <div class="pool-cards">
+        {% for item, ticket in pool %}
+          {% include "tickets/_plan_card.html" with extra=ticket.assignee.username|default:"frei" %}
+        {% empty %}
+          <p class="muted small">Tickets aus „Noch nicht geplant“ hierher ziehen. Aus dem Pool nimmt sich jeder Bearbeiter selbst, was er erledigt.</p>
+        {% endfor %}
+      </div>
+    </section>
+    <div class="panel flush">
+    <table class="plan-table">
+      <thead>
+        <tr>
+          <th class="plan-user">Bearbeiter</th>
+          {% for day in days %}
+            <th{% if day.date == today %} class="is-today"{% endif %}>{{ day.date|date:"D, d.m." }}{% if day.holiday %}<br><span class="muted small">{{ day.holiday }}</span>{% endif %}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td class="plan-user">
+              <strong>{{ row.user.get_full_name|default:row.user.username }}</strong>
+              <div class="muted small">{{ row.planned|minutes }} von {{ row.capacity|minutes }}</div>
+            </td>
+            {% for cell in row.cells %}
+              <td class="plan-drop{% if cell.over %} over{% endif %}{% if cell.absent %} absent{% endif %}{% if cell.date == today %} is-today{% endif %}" data-date="{{ cell.date|date:'Y-m-d' }}" data-user="{{ row.user.pk }}">
+                <div class="plan-load">
+                  {% if cell.absent %}{{ cell.absent }}{% else %}{{ cell.planned|minutes }} / {{ cell.capacity|minutes }}{% endif %}
+                  {% if cell.booked %}<span class="muted"> · gebucht {{ cell.booked|duration }}</span>{% endif %}
+                </div>
+                {% for item in cell.items %}{% include "tickets/_plan_card.html" %}{% endfor %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="muted empty">Keine Bearbeiter vorhanden.</td></tr>
+        {% endfor %}
+        <tr class="unassigned-row">
+          <td class="plan-user"><strong>Nicht zugewiesen</strong><div class="muted small">geplant, aber ohne Bearbeiter</div></td>
+          {% for cell in unassigned %}
+            <td class="plan-drop{% if cell.date == today %} is-today{% endif %}" data-date="{{ cell.date|date:'Y-m-d' }}" data-user="">
+              {% for item in cell.items %}{% include "tickets/_plan_card.html" %}{% endfor %}
+            </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <aside class="planner-side">
+    {% if missed %}
+      <section class="panel">
+        <h2>Termin vorbei, noch offen ({{ missed|length }})</h2>
+        {% for item, ticket in missed %}
+          {% include "tickets/_plan_card.html" with extra=ticket.planned_for|date:"d.m." %}
+        {% endfor %}
+      </section>
+    {% endif %}
+    <section class="panel plan-drop backlog" data-date="" data-keep="1" data-unpool="1">
+      <h2>Noch nicht geplant ({{ backlog|length }})</h2>
+      <p class="muted small">Karte auf einen Tag ziehen, um sie einzuplanen. Hierher zurückziehen, um die Planung aufzuheben.</p>
+      {% for item, ticket in backlog %}
+        {% include "tickets/_plan_card.html" with extra=ticket.assignee.username|default:"nicht zugewiesen" %}
+      {% empty %}
+        <p class="muted">Alle offenen Tickets sind eingeplant.</p>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <h2>Abwesenheiten</h2>
+      {% for a in absences %}
+        <div class="milestone">
+          <div>
+            <strong>{{ a.user.get_full_name|default:a.user.username }}</strong>
+            <div class="muted small">{{ a.start_date|date:"d.m." }}–{{ a.end_date|date:"d.m.Y" }}{% if a.reason %} · {{ a.reason }}{% endif %}</div>
+          </div>
+          <form method="post" action="{% url 'tickets:absence_delete' a.pk %}">{% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="linklike danger-text" type="submit">löschen</button>
+          </form>
+        </div>
+      {% empty %}
+        <p class="muted small">In dieser Woche ist niemand abwesend.</p>
+      {% endfor %}
+      <details>
+        <summary>Abwesenheit eintragen</summary>
+        <form method="post" action="{% url 'tickets:absence_add' %}" class="block">{% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          {% include "_form.html" with form=absence_form %}
+          <button class="btn small" type="submit">Eintragen</button>
+        </form>
+      </details>
+    </section>
+  </aside>
+</div>
+<p class="muted small">Auf dem Handy: Karte mit ⇄ auswählen, dann den Tag antippen. Die Zahl in jeder Zelle ist der geplante Aufwand gegen die Tageskapazität; rot bedeutet überbucht. An Feiertagen ist die Kapazität null. Karten ohne Aufwand zählen nicht mit. Projektaufgaben erscheinen hier, sobald sie in der Aufgabe einen Tag bei „Geplant für“ haben.</p>
+{% endblock %}

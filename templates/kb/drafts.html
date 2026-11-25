@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Entwürfe · Helpdesk{% endblock %}
+{% block content %}
+<h1>Entwürfe zur Freigabe</h1>
+<p class="muted">Diese Artikel sind automatisch aus gelösten Tickets entstanden. Bitte kurz prüfen (Namen, Passwörter und andere persönliche Angaben entfernen) und dann freigeben.</p>
+
+<div class="panel flush">
+  <table>
+    <thead><tr><th>Titel</th><th>Kategorie</th><th>Aus Ticket</th><th>Erstellt</th><th></th></tr></thead>
+    <tbody>
+      {% for a in drafts %}
+        <tr>
+          <td><a href="{{ a.get_absolute_url }}">{{ a.title }}</a></td>
+          <td>{{ a.category|default:"–" }}</td>
+          <td>{% if a.source_ticket %}<a href="{{ a.source_ticket.get_absolute_url }}">#{{ a.source_ticket.pk }}</a>{% else %}–{% endif %}</td>
+          <td>{{ a.created_at|date:"d.m.Y H:i" }}</td>
+          <td class="right">
+            <a class="btn small" href="{% url 'kb:edit' a.pk %}">Prüfen</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="muted empty">Keine Entwürfe offen.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

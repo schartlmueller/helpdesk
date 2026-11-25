@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}Zeiten und Planung · Helpdesk{% endblock %}
+{% block content %}
+<h1>Zeiten und Planung</h1>
+
+<form method="get" class="filters">
+  <label class="inline">Von <input type="date" name="von" value="{{ start|date:'Y-m-d' }}"></label>
+  <label class="inline">Bis <input type="date" name="bis" value="{{ end|date:'Y-m-d' }}"></label>
+  <button class="btn" type="submit">Anzeigen</button>
+  <a class="btn" href="?von={{ start|date:'Y-m-d' }}&amp;bis={{ end|date:'Y-m-d' }}&amp;format=csv">Als CSV herunterladen</a>
+  <a class="btn" href="{% url 'tickets:service_report' %}">Leistungsnachweis je Organisation</a>
+</form>
+
+<section class="panel">
+  <h2>Gebuchte Zeit vom {{ start|date:"d.m.Y" }} bis {{ end|date:"d.m.Y" }}: {{ total_seconds|duration }}</h2>
+  {% for row in report %}
+    <div class="report-user">
+      <div class="report-head">
+        <strong>{{ row.user.get_full_name|default:row.user.username }}</strong>
+        <span>{{ row.seconds|duration }}</span>
+      </div>
+      {% for item in row.targets %}
+        <a class="row-link split" href="{{ item.url }}">
+          <span>{{ item.label }}</span>
+          <span>{{ item.seconds|duration }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% empty %}
+    <p class="muted">In diesem Zeitraum wurde keine Zeit gebucht.</p>
+  {% endfor %}
+</section>
+
+<h2 class="section-title">Planung der offenen Tickets</h2>
+<div class="panel flush">
+  <table>
+    <thead>
+      <tr><th>Geplant für</th><th>Ticket</th><th>Bearbeiter</th><th>Status</th><th>Fällig bis</th><th>Gebucht</th><th>Geplant</th></tr>
+    </thead>
+    <tbody>
+      {% for t in planned %}
+        <tr>
+          <td>{% if t.planned_for %}{{ t.planned_for|date:"D, d.m.Y" }}{% if t.planned_for < today %} <span class="badge overdue">Termin vorbei</span>{% endif %}{% else %}<span class="muted">nicht geplant</span>{% endif %}</td>
+          <td><a href="{{ t.get_absolute_url }}"><span class="muted">#{{ t.pk }}</span> {{ t.title }}</a></td>
+          <td>{% if t.assignee %}{{ t.assignee.get_full_name|default:t.assignee.username }}{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td><span class="badge status-{{ t.status }}">{{ t.get_status_display }}</span></td>
+          <td>{% if t.due_at %}{{ t.due_at|date:"d.m.Y H:i" }}{% if t.is_overdue %} <span class="badge overdue">überfällig</span>{% endif %}{% else %}–{% endif %}</td>
+          <td>{{ t.booked|duration }}{% if t.over_plan %} <span class="badge overdue">über Plan</span>{% endif %}</td>
+          <td>{% if t.estimated_minutes %}{{ t.estimated_minutes|minutes }}{% else %}<span class="muted">–</span>{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="muted empty">Keine offenen Tickets.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted small">Termin und geplanter Aufwand werden im Ticket unter „Bearbeiten und planen“ gesetzt. Zeit lässt sich im Ticket nachtragen; Korrekturen bestehender Einträge unter Verwaltung → Zeiteinträge.</p>
+{% endblock %}

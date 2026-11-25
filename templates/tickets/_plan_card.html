@@ -1,0 +1,9 @@
+{% load helpdesk %}<div class="plan-card prio-border-{{ item.priority }}{% if item.done %} done{% endif %}" draggable="true" data-kind="{{ item.kind }}" data-id="{{ item.id }}">
+  <button type="button" class="move-btn" title="Verschieben: auswählen, dann Ziel antippen" aria-label="Verschieben">⇄</button>
+  <a href="{{ item.url }}" draggable="false"><span class="muted">{{ item.ref }}</span> {{ item.title }}</a>
+  <div class="muted small">
+    {% if item.done %}erledigt{% elif item.minutes %}{{ item.minutes|minutes }}{% else %}ohne Aufwand{% endif %}
+    {% if item.after_due %} · <span class="warn-text">nach Zielzeit</span>{% endif %}
+    {% if extra %} · {{ extra }}{% endif %}
+  </div>
+</div>

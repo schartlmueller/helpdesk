@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}Statistik · Helpdesk{% endblock %}
+{% block content %}
+<h1>Statistik der letzten zwölf Monate</h1>
+
+<div class="tiles">
+  <div class="tile"><strong>{{ total_created }}</strong><span>Tickets angelegt</span></div>
+  <div class="tile"><strong>{{ total_resolved }}</strong><span>Tickets gelöst</span></div>
+</div>
+
+<div class="panel flush">
+  <table>
+    <thead>
+      <tr>
+        <th>Monat</th><th>Angelegt</th><th>Gelöst</th><th class="wide">Verlauf (dunkel = angelegt, hell = gelöst)</th>
+        <th>Ø erste Antwort</th><th>Reaktionszeit eingehalten</th>
+        <th>Ø Lösungsdauer</th><th>Zielzeit eingehalten</th><th>Gebuchte Zeit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.label }}</td>
+          <td>{{ r.created }}</td>
+          <td>{{ r.resolved }}</td>
+          <td>
+            <div class="bar"><span style="width: {{ r.created_bar }}%"></span></div>
+            <div class="bar light"><span style="width: {{ r.resolved_bar }}%"></span></div>
+          </td>
+          <td>{% if r.response_hours != None %}{{ r.response_hours }} h{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>{% if r.response_percent != None %}{{ r.response_percent }} %{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>{% if r.avg_hours != None %}{{ r.avg_hours }} h{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>{% if r.sla_percent != None %}{{ r.sla_percent }} %{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>{{ r.booked|duration }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted small">Erste Antwort und Lösungsdauer sind in Kalenderstunden ab Anlage gemessen. Die Reaktionszeit zählt bei dem Monat, in dem das Ticket angelegt wurde.</p>
+
+<div class="grid-3">
+  <section class="panel">
+    <h2>Tickets nach Kategorie</h2>
+    {% for c in by_category %}
+      <div class="row-link split"><span>{{ c.category__name|default:"Ohne Kategorie" }}</span><span>{{ c.n }}</span></div>
+    {% empty %}<p class="muted">Keine Daten.</p>{% endfor %}
+  </section>
+  <section class="panel">
+    <h2>Tickets nach Art</h2>
+    {% for k in by_kind %}
+      <div class="row-link split"><span>{{ k.name }}</span><span>{{ k.n }}</span></div>
+    {% empty %}<p class="muted">Keine Daten.</p>{% endfor %}
+  </section>
+  <section class="panel">
+    <h2>Tickets nach Organisation</h2>
+    {% for o in by_organization %}
+      <div class="row-link split"><span>{{ o.organization__name|default:"Ohne Organisation" }}</span><span>{{ o.n }}</span></div>
+    {% empty %}<p class="muted">Keine Daten.</p>{% endfor %}
+  </section>
+  <section class="panel">
+    <h2>Tickets nach Priorität</h2>
+    {% for p in by_priority %}
+      <div class="row-link split"><span>{{ p.name }}</span><span>{{ p.n }}</span></div>
+    {% empty %}<p class="muted">Keine Daten.</p>{% endfor %}
+  </section>
+  <section class="panel">
+    <h2>Gelöst je Bearbeiter</h2>
+    {% for a in by_assignee %}
+      <div class="row-link split"><span>{{ a.name }}</span><span>{{ a.n }}</span></div>
+    {% empty %}<p class="muted">Keine Daten.</p>{% endfor %}
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Meistgelesene Wissensartikel</h2>
+  {% for a in top_articles %}
+    <a class="row-link split" href="{{ a.get_absolute_url }}">
+      <span>{{ a.title }}</span>
+      <span class="muted">{{ a.views }} Aufrufe · {{ a.yes }} hilfreich · {{ a.no }} nicht hilfreich</span>
+    </a>
+  {% empty %}<p class="muted">Noch keine veröffentlichten Artikel.</p>{% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}Wochenpool KW {{ week_number }} · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Wochenpool <span class="muted">KW {{ week_number }} · {{ monday|date:"d.m." }}–{{ friday|date:"d.m.Y" }}</span></h1>
+  <span class="spacer"></span>
+  <a class="btn" href="?woche={{ previous|date:'Y-m-d' }}">← Vorige</a>
+  <a class="btn" href="{% url 'tickets:pool' %}">Diese Woche</a>
+  <a class="btn" href="?woche={{ following|date:'Y-m-d' }}">Nächste →</a>
+  <a class="btn" href="{% url 'tickets:planner' %}?woche={{ monday|date:'Y-m-d' }}">Wochenplanung</a>
+</div>
+
+<div class="tiles">
+  <div class="tile"><strong>{{ free|length }}</strong><span>Nicht zugeordnet</span></div>
+  <div class="tile"><strong>{{ taken_count }}</strong><span>Zugeordnet, offen</span></div>
+  <div class="tile">
+    <strong>{{ done|length }} von {{ total }}</strong><span>Erledigt</span>
+    <div class="bar"><span style="width: {{ percent_done }}%"></span></div>
+  </div>
+  <div class="tile"><strong>{{ unplanned_done }}</strong><span>Daneben erledigt, ohne im Pool zu sein</span></div>
+</div>
+{% if minutes_total %}
+  <p class="muted">Geplanter Aufwand im Pool: {{ minutes_total|minutes }}, davon erledigt {{ minutes_done|minutes }}. Tickets ohne Aufwandsangabe zählen nicht mit.</p>
+{% endif %}
+
+{% if leftovers %}
+  <form method="post" action="{% url 'tickets:pool_carry' %}" class="message carry">{% csrf_token %}
+    <input type="hidden" name="woche" value="{{ monday|date:'Y-m-d' }}">
+    <span>{{ leftovers }} offene Tickets liegen noch im Pool früherer Wochen.</span>
+    <button class="btn small" type="submit">In diese Woche übernehmen</button>
+  </form>
+{% endif %}
+
+<div class="head pool-view">
+  <h2 class="section-title">Tickets nach Bearbeiter</h2>
+  <span class="spacer"></span>
+  <div class="toggle" role="group" aria-label="Ansicht">
+    <a class="btn small{% if view == 'meine' %} primary{% endif %}" href="?woche={{ monday|date:'Y-m-d' }}&amp;ansicht=meine">Nur meine</a>
+    <a class="btn small{% if view == 'alle' %} primary{% endif %}" href="?woche={{ monday|date:'Y-m-d' }}&amp;ansicht=alle">Alle</a>
+  </div>
+</div>
+
+<div class="pool-groups">
+  {% for group in groups %}
+    <section class="panel{% if group.mine %} mine{% endif %}">
+      <h2>{{ group.user.get_full_name|default:group.user.username }}{% if group.mine %} <span class="muted">(ich)</span>{% endif %}</h2>
+      <p class="muted small group-sum">{{ group.open|length }} offen · {{ group.done|length }} erledigt{% if group.minutes %} · {{ group.minutes|minutes }} geplant{% endif %}</p>
+      {% for t in group.open %}
+        {% include "tickets/_pool_ticket.html" %}
+          <div class="pool-buttons">
+            <span class="badge status-{{ t.status }}">{{ t.get_status_display }}</span>
+            {% include "tickets/_pool_assign.html" %}
+          </div>
+        </div>
+      {% empty %}
+        <p class="muted small">Keine offenen Tickets.</p>
+      {% endfor %}
+      {% if group.done %}
+        <details class="done-list">
+          <summary>Erledigt ({{ group.done|length }})</summary>
+          {% for t in group.done %}
+            {% include "tickets/_pool_ticket.html" %}
+              <div class="muted small">{% if t.closed_at %}{{ t.closed_at|date:"D d.m. H:i" }}{% endif %}</div>
+            </div>
+          {% endfor %}
+        </details>
+      {% endif %}
+    </section>
+  {% empty %}
+    {% if view == "meine" %}<section class="panel"><p class="muted">Dir ist in dieser Woche noch kein Ticket zugeordnet.</p></section>{% endif %}
+  {% endfor %}
+
+  {% if view == "alle" %}
+    <section class="panel free-group">
+      <h2>Nicht zugeordnet <span class="muted">frei zum Übernehmen</span></h2>
+      <p class="muted small group-sum">{{ free|length }} offen</p>
+      {% for t in free %}
+        {% include "tickets/_pool_ticket.html" %}
+          <div class="pool-buttons">
+            <form method="post" action="{% url 'tickets:pool_take' t.pk %}">{% csrf_token %}
+              <button class="btn small primary" type="submit">Übernehmen</button>
+              <button class="btn small" type="submit" name="start" value="1">und starten</button>
+            </form>
+            {% include "tickets/_pool_assign.html" %}
+          </div>
+        </div>
+      {% empty %}
+        <p class="muted small">{% if total %}Alles zugeordnet oder erledigt.{% else %}Der Pool dieser Woche ist noch leer. Unten Tickets auswählen.{% endif %}</p>
+      {% endfor %}
+      {% if done_unassigned %}
+        <details class="done-list">
+          <summary>Erledigt ohne Bearbeiter ({{ done_unassigned|length }})</summary>
+          {% for t in done_unassigned %}
+            {% include "tickets/_pool_ticket.html" %}
+            </div>
+          {% endfor %}
+        </details>
+      {% endif %}
+    </section>
+  {% elif free %}
+    <section class="panel free-group">
+      <p>{{ free|length }} Tickets im Pool sind noch niemandem zugeordnet.</p>
+      <a class="btn small" href="?woche={{ monday|date:'Y-m-d' }}&amp;ansicht=alle">Alle anzeigen</a>
+    </section>
+  {% endif %}
+</div>
+
+<details class="panel"{% if not total or query or kind %} open{% endif %}>
+  <summary>Planung: Tickets für KW {{ week_number }} auswählen</summary>
+  <form method="get" class="filters block">
+    <input type="hidden" name="woche" value="{{ monday|date:'Y-m-d' }}">
+    <input type="search" name="q" value="{{ query }}" placeholder="Offene Tickets durchsuchen">
+    <select name="art">
+      <option value="">Alle Arten</option>
+      {% for value, label in kind_choices %}<option value="{{ value }}"{% if kind == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      <option value="none"{% if kind == "none" %} selected{% endif %}>Nicht eingestuft</option>
+    </select>
+    <button class="btn" type="submit">Filtern</button>
+  </form>
+  <form method="post" action="{% url 'tickets:pool_add' %}">{% csrf_token %}
+    <input type="hidden" name="woche" value="{{ monday|date:'Y-m-d' }}">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <table class="pool-pick">
+      <thead>
+        <tr><th><input type="checkbox" class="js-check-all" aria-label="Alle auswählen"></th><th>Ticket</th><th>Priorität</th><th>Art</th><th>Bearbeiter</th><th>Fällig bis</th><th>Aufwand</th><th>Pool</th></tr>
+      </thead>
+      <tbody>
+        {% for t in candidates %}
+          <tr>
+            <td><input type="checkbox" name="tickets" value="{{ t.pk }}" id="pick-{{ t.pk }}"></td>
+            <td><label for="pick-{{ t.pk }}"><span class="muted">#{{ t.pk }}</span> {{ t.title }}</label> <a class="muted small" href="{{ t.get_absolute_url }}">öffnen</a></td>
+            <td><span class="badge prio-{{ t.priority }}">{{ t.get_priority_display }}</span></td>
+            <td>{% if t.kind %}<span class="badge kind-{{ t.kind }}">{{ t.get_kind_display }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+            <td>{% if t.assignee %}{{ t.assignee.get_full_name|default:t.assignee.username }}{% else %}<span class="muted">–</span>{% endif %}</td>
+            <td>{% if t.sla_paused %}<span class="muted">pausiert</span>{% elif t.due_at %}{{ t.due_at|date:"d.m. H:i" }}{% if t.is_overdue %} <span class="badge overdue">überfällig</span>{% endif %}{% else %}–{% endif %}</td>
+            <td>{% if t.estimated_minutes %}{{ t.estimated_minutes|minutes }}{% else %}<span class="muted">–</span>{% endif %}</td>
+            <td>{% if t.pool_week %}<span class="muted">KW {{ t.pool_week|date:"W" }}</span>{% else %}<span class="muted">–</span>{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8" class="muted empty">Keine weiteren offenen Tickets.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="actions">
+      <label class="inline">Zuordnen an
+        <select name="assignee">
+          <option value="">niemanden (frei im Pool)</option>
+          {% for u in staff_users %}<option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="btn primary" type="submit">Ausgewählte in den Pool KW {{ week_number }}</button>
+      <span class="muted small">Sortiert nach Priorität und Zielzeit, höchstens 150 Tickets. Ohne Auswahl bei „Zuordnen an“ behalten Tickets ihren bisherigen Bearbeiter.</span>
+    </div>
+  </form>
+</details>
+<p class="muted small">Tickets außerhalb des Pools lassen sich weiterhin ganz normal bearbeiten und lösen. Sie zählen dann oben unter „Daneben erledigt“.</p>
+{% endblock %}

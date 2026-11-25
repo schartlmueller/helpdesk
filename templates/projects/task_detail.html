@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}{{ task.title }} · {{ project.name }}{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{{ task.title }}</h1>
+  <span class="badge">{{ task.get_status_display }}</span>
+  <span class="spacer"></span>
+  <a class="btn" href="{{ project.get_absolute_url }}">Zurück zu {{ project.name }}</a>
+</div>
+
+<div class="grid-main">
+  <div>
+    <form method="post" class="panel">{% csrf_token %}
+      {% include "_form.html" %}
+      <div class="actions">
+        <button class="btn primary" type="submit">Speichern</button>
+        <span class="spacer"></span>
+        <button class="btn danger" type="submit" name="delete" value="1" formnovalidate>Aufgabe löschen</button>
+      </div>
+    </form>
+
+    <section class="panel">
+      <h2>Kommentare</h2>
+      {% for c in comments %}
+        <div class="comment">
+          <div class="comment-head">
+            <strong>{% if c.author %}{{ c.author.get_full_name|default:c.author.username }}{% else %}Gelöschter Benutzer{% endif %}</strong>
+            <span class="muted">{{ c.created_at|date:"d.m.Y H:i" }}</span>
+          </div>
+          <div class="text">{{ c.body|urlize|linebreaksbr }}</div>
+        </div>
+      {% empty %}
+        <p class="muted">Noch keine Kommentare.</p>
+      {% endfor %}
+      {% if attachments %}
+        <h2 class="sub">Anhänge</h2>
+        <ul class="files">
+          {% for f in attachments %}
+            <li><a href="{{ f.get_absolute_url }}">{{ f.name }}</a> <span class="muted">{{ f.size|filesizeformat }}</span></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'projects:task_comment' task.pk %}" class="stack">{% csrf_token %}
+        {% include "_form.html" with form=comment_form %}
+        <div class="actions"><button class="btn" type="submit">Kommentar speichern</button></div>
+      </form>
+    </section>
+  </div>
+
+  <aside>
+    <section class="panel timer-panel{% if my_timer_running %} running{% endif %}">
+      <h2>Zeiterfassung</h2>
+      <p class="timer">
+        <strong id="timer" data-seconds="{{ total_seconds }}" data-running="{% if timer_running %}1{% else %}0{% endif %}">{{ total_seconds|duration }}</strong>
+        {% if task.estimated_minutes %}<span class="muted">von {{ task.estimated_minutes|minutes }} geplant</span>{% endif %}
+      </p>
+      <form method="post" action="{% url 'projects:task_timer' task.pk %}">{% csrf_token %}
+        {% if my_timer_running %}
+          <button class="btn" type="submit" name="action" value="pause">Pause</button>
+          <span class="muted small">Deine Uhr läuft.</span>
+        {% else %}
+          <button class="btn primary" type="submit" name="action" value="start">{% if time_entries %}Fortsetzen{% else %}Arbeit starten{% endif %}</button>
+        {% endif %}
+      </form>
+      {% if time_entries %}
+        <table class="mini">
+          {% for e in time_entries %}
+            <tr>
+              <td>{{ e.user.get_full_name|default:e.user.username }}</td>
+              <td class="muted">{{ e.started_at|date:"d.m. H:i" }}–{% if e.ended_at %}{{ e.ended_at|date:"H:i" }}{% else %}läuft{% endif %}{% if e.note %}<br>{{ e.note }}{% endif %}</td>
+              <td class="right nowrap">{{ e.seconds|duration }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+      <p class="muted small">Beim Status „Erledigt“ stoppt die Uhr automatisch.</p>
+      <details>
+        <summary>Zeit nachtragen</summary>
+        <form method="post" action="{% url 'projects:task_time_add' task.pk %}" class="block">{% csrf_token %}
+          {% include "_form.html" with form=manual_time_form %}
+          <button class="btn small" type="submit">Eintragen</button>
+        </form>
+      </details>
+    </section>
+  </aside>
+</div>
+{% endblock %}

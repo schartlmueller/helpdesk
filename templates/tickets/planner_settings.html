@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Planung einrichten · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Kapazität und Outlook-Kalender</h1>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'tickets:planner' %}">Zur Wochenplanung</a>
+</div>
+
+<form method="post" class="panel reading">{% csrf_token %}
+  <h2>Meine Tageskapazität</h2>
+  <p class="muted">So viele Stunden pro Tag können für dich verplant werden. Wer nebenbei Anrufe und Zurufe abfängt, trägt weniger als die volle Arbeitszeit ein.</p>
+  {% include "_form.html" %}
+  <button class="btn primary" type="submit">Speichern</button>
+</form>
+
+<section class="panel reading">
+  <h2>Kalender in Outlook anzeigen</h2>
+  <p>Unter dieser Adresse stehen deine geplanten Tickets und Projektaufgaben als Ganztagestermine bereit:</p>
+  <input type="text" readonly value="{{ feed_url }}" onclick="this.select()">
+  <ol>
+    <li><strong>Outlook (neu) oder Outlook im Web:</strong> Kalender → „Kalender hinzufügen“ → „Aus dem Internet abonnieren“ → Adresse einfügen.</li>
+    <li><strong>Outlook klassisch:</strong> Kalender → „Kalender öffnen“ → „Aus dem Internet…“ → Adresse einfügen.</li>
+  </ol>
+  <p class="muted small">Der Kalender ist nur lesbar; geplant wird hier im Helpdesk. Outlook holt Änderungen in eigenen Abständen ab, das kann einige Stunden dauern. Outlook im Web und Microsoft 365 rufen die Adresse von Microsoft-Servern aus ab, dafür muss der Helpdesk aus dem Internet erreichbar sein. Wer die Adresse kennt, kann deine Planung lesen, also nicht weitergeben.</p>
+  <form method="post">{% csrf_token %}
+    <button class="btn small" type="submit" name="new_token" value="1">Neue Adresse erzeugen (alte wird ungültig)</button>
+  </form>
+</section>
+{% endblock %}

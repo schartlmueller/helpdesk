@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Wissensbasis · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Wissensbasis</h1>
+  {% if user.is_staff %}<a class="btn" href="{% url 'kb:create' %}">Neuer Artikel</a>{% endif %}
+</div>
+
+<form method="get" class="filters">
+  <input type="search" name="q" value="{{ query }}" placeholder="Problem oder Stichwort suchen" autofocus>
+  <select name="kategorie">
+    <option value="">Alle Kategorien</option>
+    {% for c in categories %}
+      <option value="{{ c.pk }}"{% if category_id == c.pk|stringformat:"s" %} selected{% endif %}>{{ c.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn" type="submit">Suchen</button>
+</form>
+
+<div class="articles">
+  {% for a in articles %}
+    <a class="panel article-card" href="{{ a.get_absolute_url }}">
+      <h2>{{ a.title }}</h2>
+      <p>{{ a.problem|truncatechars:180 }}</p>
+      <span class="muted">{% if a.category %}{{ a.category }} · {% endif %}{{ a.views }} Aufrufe{% if user.is_staff and a.organization %} · nur {{ a.organization }}{% endif %}</span>
+    </a>
+  {% empty %}
+    <p class="muted">{% if query %}Kein Artikel passt zu „{{ query }}“.{% else %}Noch keine Artikel veröffentlicht.{% endif %}</p>
+  {% endfor %}
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

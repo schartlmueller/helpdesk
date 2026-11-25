@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Neue Aufgabe · {{ project.name }}{% endblock %}
+{% block content %}
+<h1>Neue Aufgabe <span class="muted">· {{ project.name }}</span></h1>
+<form method="post" class="panel reading">{% csrf_token %}
+  {% include "_form.html" %}
+  <div class="actions">
+    <button class="btn primary" type="submit">Speichern</button>
+    <a class="btn" href="{{ project.get_absolute_url }}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

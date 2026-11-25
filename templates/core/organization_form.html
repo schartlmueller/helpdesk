@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Organisation · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{% if organization %}{{ organization.name }}{% else %}Neue Organisation{% endif %}</h1>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'organizations' %}">Alle Organisationen</a>
+</div>
+
+<div class="grid-2">
+  <form method="post" class="panel">{% csrf_token %}
+    <h2>Stammdaten</h2>
+    {% include "_form.html" %}
+    <button class="btn primary" type="submit">Speichern</button>
+  </form>
+
+  {% if organization %}
+    <section class="panel">
+      <h2>Mitglieder</h2>
+      {% for m in members %}
+        <div class="link-row">
+          <span>
+            {{ m.user.get_full_name|default:m.user.username }}
+            <span class="muted small">{{ m.user.email }}</span>
+            {% if m.is_contact %}<span class="badge status-open">Ansprechpartner</span>{% endif %}
+          </span>
+          <form method="post">{% csrf_token %}
+            <input type="hidden" name="user" value="{{ m.user.pk }}">
+            <button class="linklike link-text" type="submit" name="member_action" value="toggle_contact">{% if m.is_contact %}kein Ansprechpartner{% else %}als Ansprechpartner{% endif %}</button>
+            <button class="linklike danger-text" type="submit" name="member_action" value="remove">entfernen</button>
+          </form>
+        </div>
+      {% empty %}
+        <p class="muted small">Noch keine Mitglieder.</p>
+      {% endfor %}
+      <form method="post" class="stack">{% csrf_token %}
+        <div class="field">
+          <label for="add-user">Person hinzufügen</label>
+          <select id="add-user" name="user" required>
+            <option value="">– auswählen –</option>
+            {% for u in candidates %}<option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}{% if u.email %} ({{ u.email }}){% endif %}</option>{% endfor %}
+          </select>
+          <small>Zur Auswahl stehen Personen ohne Organisation. Neue Melder mit einer der E-Mail-Domains werden automatisch zugeordnet.</small>
+        </div>
+        <button class="btn small" type="submit" name="member_action" value="add">Hinzufügen</button>
+      </form>
+    </section>
+  {% else %}
+    <p class="muted">Nach dem Speichern lassen sich Mitglieder zuordnen.</p>
+  {% endif %}
+</div>
+{% endblock %}

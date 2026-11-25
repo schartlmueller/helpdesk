@@ -1,0 +1,10 @@
+Django==5.2.*
+psycopg[binary]==3.2.*
+gunicorn==23.*
+whitenoise==6.*
+tzdata
+django-auth-ldap
+mozilla-django-oidc
+markdown
+nh3
+reportlab

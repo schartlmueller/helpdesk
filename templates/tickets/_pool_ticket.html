@@ -1,0 +1,10 @@
+{% load helpdesk %}<div class="pool-ticket prio-border-{{ t.priority }}">
+  <a href="{{ t.get_absolute_url }}"><span class="muted">#{{ t.pk }}</span> {{ t.title }}</a>
+  <div class="muted small">
+    <span class="badge prio-{{ t.priority }}">{{ t.get_priority_display }}</span>
+    {% if t.kind %}<span class="badge kind-{{ t.kind }}">{{ t.get_kind_display }}</span>{% endif %}
+    {% if t.estimated_minutes %}{{ t.estimated_minutes|minutes }} · {% endif %}
+    {{ t.requester.get_full_name|default:t.requester.username }}
+    {% if t.is_overdue %}<span class="badge overdue">überfällig</span>{% endif %}
+    {% if t.planned_for %} · geplant {{ t.planned_for|date:"D d.m." }}{% endif %}
+  </div>

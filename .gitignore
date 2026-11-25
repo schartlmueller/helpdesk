@@ -1,0 +1,12 @@
+# Zugangsdaten und lokale Einstellungen: niemals ins Repository
+.env
+
+# Laufzeitdaten
+backups/
+media/
+staticfiles/
+db.sqlite3
+
+# Python
+__pycache__/
+*.pyc

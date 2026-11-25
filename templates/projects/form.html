@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Projekt · Helpdesk{% endblock %}
+{% block content %}
+<h1>{% if project %}Projekt bearbeiten{% else %}Neues Projekt{% endif %}</h1>
+<form method="post" class="panel reading">{% csrf_token %}
+  {% include "_form.html" %}
+  <div class="actions">
+    <button class="btn primary" type="submit">Speichern</button>
+    <a class="btn" href="{% if project %}{{ project.get_absolute_url }}{% else %}{% url 'projects:list' %}{% endif %}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

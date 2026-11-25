@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Übersicht · Helpdesk{% endblock %}
+{% block content %}
+<h1>Übersicht</h1>
+
+{% if user.is_staff %}
+  <div class="tiles">
+    <a class="tile" href="{% url 'tickets:list' %}"><strong>{{ open_count }}</strong><span>Offene Tickets</span></a>
+    <a class="tile" href="{% url 'tickets:pool' %}"><strong>{{ pool_free_count }}</strong><span>Frei im Wochenpool</span></a>
+    <a class="tile" href="{% url 'tickets:list' %}?scope=unassigned"><strong>{{ unassigned_count }}</strong><span>Nicht zugewiesen</span></a>
+    <a class="tile{% if unanswered_count %} warn{% endif %}" href="{% url 'tickets:list' %}?scope=unanswered"><strong>{{ unanswered_count }}</strong><span>Warten zu lange auf Antwort</span></a>
+    <a class="tile{% if overdue_count %} warn{% endif %}" href="{% url 'tickets:list' %}?scope=overdue"><strong>{{ overdue_count }}</strong><span>Überfällig</span></a>
+    <a class="tile" href="{% url 'kb:drafts' %}"><strong>{{ draft_count }}</strong><span>Wissens-Entwürfe zur Freigabe</span></a>
+  </div>
+
+  <div class="head section-head">
+    <h2 class="section-title">Entwicklung der letzten {{ overview.days }} Tage</h2>
+    <span class="spacer"></span>
+    <form method="get" class="inline-filter">
+      <select name="tage" onchange="this.form.submit()" aria-label="Zeitraum">
+        {% for p in overview.periods %}<option value="{{ p }}"{% if p == overview.days %} selected{% endif %}>{{ p }} Tage</option>{% endfor %}
+      </select>
+      <select name="art" onchange="this.form.submit()" aria-label="Art">
+        <option value="">Alle Arten</option>
+        {% for value, label in overview.kind_choices %}<option value="{{ value }}"{% if overview.kind == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        <option value="none"{% if overview.kind == "none" %} selected{% endif %}>Nicht eingestuft</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="tiles">
+    <div class="tile"><strong>{{ overview.new_today }}</strong><span>Heute neu angelegt</span></div>
+    <div class="tile"><strong>{{ overview.total_created }}</strong><span>Neu im Zeitraum</span></div>
+    <div class="tile"><strong>{{ overview.total_closed }}</strong><span>Erledigt im Zeitraum</span></div>
+    <div class="tile"><strong>{{ overview.open_count }}</strong><span>Offen{% if overview.change > 0 %} · {{ overview.change }} mehr als zu Beginn{% elif overview.change < 0 %} · {{ overview.change|cut:"-" }} weniger als zu Beginn{% else %} · unverändert{% endif %}</span></div>
+  </div>
+
+  <div class="grid-main">
+    <div>
+      <section class="panel viz-panel">
+        <h2>Offene Tickets <span class="muted">Bestand am Ende jedes Tages</span></h2>
+        <div class="viz-wrap">{{ overview.line_svg|safe }}<div class="viz-tip" hidden></div></div>
+        <p class="muted small">Fällt die Linie, wird mehr erledigt als neu angelegt. Als erledigt zählt ein Ticket ab „Gelöst“.</p>
+      </section>
+      <section class="panel viz-panel">
+        <h2>Neu und erledigt <span class="muted">{{ overview.bar_unit }}</span></h2>
+        <div class="viz-legend"><span><i class="viz-key viz-s1"></i>Neu angelegt</span><span><i class="viz-key viz-s2"></i>Erledigt</span></div>
+        <div class="viz-wrap">{{ overview.bar_svg|safe }}<div class="viz-tip" hidden></div></div>
+        <details>
+          <summary>Zahlen als Tabelle</summary>
+          <table class="mini">
+            <tr><th>Tag</th><th class="right">Neu</th><th class="right">Erledigt</th><th class="right">Offen</th></tr>
+            {% for r in overview.rows reversed %}
+              <tr><td>{{ r.date|date:"D, d.m.Y" }}</td><td class="right">{{ r.created }}</td><td class="right">{{ r.closed }}</td><td class="right">{{ r.open }}</td></tr>
+            {% endfor %}
+          </table>
+        </details>
+      </section>
+    </div>
+    <aside>
+      <section class="panel">
+        <h2>Offen nach Art</h2>
+        {% for k in overview.by_kind %}
+          <a class="row-link split" href="{% url 'tickets:list' %}?art={{ k.key }}"><span><span class="badge kind-{{ k.key }}">{{ k.name }}</span></span><span>{{ k.count }}</span></a>
+        {% empty %}
+          <p class="muted">Keine offenen Tickets.</p>
+        {% endfor %}
+      </section>
+      <section class="panel">
+        <h2>Zuletzt angelegt</h2>
+        {% for t in overview.newest %}
+          <a class="row-link" href="{{ t.get_absolute_url }}">
+            <span class="muted">#{{ t.pk }}</span> {{ t.title }}
+            {% if t.kind %}<span class="badge kind-{{ t.kind }}">{{ t.get_kind_display }}</span>{% endif %}
+            <div class="muted small">{{ t.created_at|date:"d.m. H:i" }} · {{ t.requester.get_full_name|default:t.requester.username }}</div>
+          </a>
+        {% empty %}
+          <p class="muted">Noch keine Tickets.</p>
+        {% endfor %}
+      </section>
+    </aside>
+  </div>
+
+  <div class="grid-2">
+    <section class="panel">
+      <h2>Meine Tickets</h2>
+      {% for t in assigned %}
+        <a class="row-link" href="{{ t.get_absolute_url }}">
+          <span class="muted">#{{ t.pk }}</span> {{ t.title }}
+          <span class="badge prio-{{ t.priority }}">{{ t.get_priority_display }}</span>
+          {% if t.is_overdue %}<span class="badge overdue">überfällig</span>{% endif %}
+        </a>
+      {% empty %}
+        <p class="muted">Dir sind keine offenen Tickets zugewiesen.</p>
+      {% endfor %}
+    </section>
+    <section class="panel">
+      <h2>Meine Aufgaben</h2>
+      {% for task in my_tasks %}
+        <a class="row-link" href="{{ task.project.get_absolute_url }}">
+          {{ task.title }} <span class="muted">· {{ task.project.name }}</span>
+          {% if task.due_date %}<span class="muted">· bis {{ task.due_date|date:"d.m.Y" }}</span>{% endif %}
+        </a>
+      {% empty %}
+        <p class="muted">Keine offenen Projektaufgaben.</p>
+      {% endfor %}
+    </section>
+  </div>
+{% else %}
+  <section class="panel">
+    <h2>{% if contact_organization %}Tickets von {{ contact_organization }}{% else %}Meine Tickets{% endif %}</h2>
+    {% for t in my_tickets %}
+      <a class="row-link" href="{{ t.get_absolute_url }}">
+        <span class="muted">#{{ t.pk }}</span> {{ t.title }}
+        {% if contact_organization and t.requester_id != user.id %}<span class="muted">· {{ t.requester.get_full_name|default:t.requester.username }}</span>{% endif %}
+        <span class="badge status-{{ t.status }}">{{ t.get_status_display }}</span>
+      </a>
+    {% empty %}
+      <p class="muted">Du hast noch kein Ticket angelegt.</p>
+    {% endfor %}
+    <p class="actions">
+      <a class="btn primary" href="{% url 'tickets:create' %}">Neues Ticket</a>
+      <a class="btn" href="{% url 'kb:list' %}">In der Wissensbasis suchen</a>
+    </p>
+  </section>
+{% endif %}
+{% endblock %}

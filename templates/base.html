@@ -1,0 +1,66 @@
+{% load static %}<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Helpdesk{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+{% if user.is_authenticated %}
+<header class="topbar">
+  <a class="brand" href="{% url 'dashboard' %}">Helpdesk</a>
+  <button class="menu-toggle" type="button" aria-label="Menü" aria-expanded="false">☰</button>
+  <nav>
+    <a href="{% url 'dashboard' %}">Übersicht</a>
+    <a href="{% url 'tickets:list' %}">Tickets</a>
+    <a href="{% url 'kb:list' %}">Wissensbasis</a>
+    {% if user.is_staff %}
+      <a href="{% url 'kb:drafts' %}">Entwürfe{% if kb_draft_count %} <span class="count">{{ kb_draft_count }}</span>{% endif %}</a>
+      <a href="{% url 'projects:list' %}">Projekte</a>
+      <a href="{% url 'tickets:pool' %}">Wochenpool</a>
+      <a href="{% url 'tickets:planner' %}">Planung</a>
+      <a href="{% url 'tickets:times' %}">Zeiten</a>
+      <details class="more">
+        <summary>Mehr</summary>
+        <div class="more-menu">
+          <a href="{% url 'announcements' %}">Störungsmeldungen</a>
+          <a href="{% url 'organizations' %}">Organisationen</a>
+          <a href="{% url 'tickets:service_report' %}">Leistungsnachweis</a>
+          <a href="{% url 'tickets:recurring' %}">Wiederkehrende Tickets</a>
+          <a href="{% url 'tickets:stats' %}">Statistik</a>
+          <a href="{% url 'admin:index' %}">Verwaltung</a>
+        </div>
+      </details>
+    {% endif %}
+  </nav>
+  <div class="topbar-right">
+    {% if running_entry %}
+      <a class="running-chip" href="{{ running_entry.target.get_absolute_url }}" title="Deine Uhr läuft">⏱ {{ running_entry.target_label|truncatechars:28 }}</a>
+    {% endif %}
+    <a class="btn primary small" href="{% url 'tickets:create' %}">Neues Ticket</a>
+    <a class="who" href="{% url 'password_change' %}" title="Passwort ändern">{{ user.get_full_name|default:user.username }}</a>
+    <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+      <button class="linklike" type="submit">Abmelden</button>
+    </form>
+  </div>
+</header>
+{% for a in announcements %}
+  <div class="announcement level-{{ a.level }}">
+    <strong>{{ a.get_level_display }}: {{ a.title }}</strong>
+    {% if a.text %}<span>{{ a.text|urlize|linebreaksbr }}</span>{% endif %}
+    {% if user.is_staff and a.organization %}<span class="muted">(nur {{ a.organization }})</span>{% endif %}
+  </div>
+{% endfor %}
+{% endif %}
+<main class="page">
+  {% if messages %}
+    <div class="messages">
+      {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Tickets · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Tickets</h1>
+  <a class="btn primary" href="{% url 'tickets:create' %}">Neues Ticket</a>
+</div>
+
+<form method="get" class="filters">
+  <input type="search" name="q" value="{{ query }}" placeholder="Suche in Betreff, Text, Antworten, Lösung oder Nummer">
+  <select name="status">
+    <option value="active"{% if status == "active" %} selected{% endif %}>Alle offenen</option>
+    <option value="all"{% if status == "all" %} selected{% endif %}>Alle</option>
+    {% for value, label in status_choices %}
+      <option value="{{ value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="art">
+    <option value="">Alle Arten</option>
+    {% for value, label in kind_choices %}
+      <option value="{{ value }}"{% if kind == value %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+    <option value="none"{% if kind == "none" %} selected{% endif %}>Nicht eingestuft</option>
+  </select>
+  {% if user.is_staff %}
+    <select name="scope">
+      <option value="">Alle Bearbeiter</option>
+      <option value="mine"{% if scope == "mine" %} selected{% endif %}>Mir zugewiesen</option>
+      <option value="unassigned"{% if scope == "unassigned" %} selected{% endif %}>Nicht zugewiesen</option>
+      <option value="overdue"{% if scope == "overdue" %} selected{% endif %}>Überfällig</option>
+      <option value="unanswered"{% if scope == "unanswered" %} selected{% endif %}>Warten zu lange auf Antwort</option>
+      <option value="followup"{% if scope == "followup" %} selected{% endif %}>Mit Wiedervorlage</option>
+      <option value="pool"{% if scope == "pool" %} selected{% endif %}>Im Wochenpool dieser Woche</option>
+    </select>
+    {% if organizations %}
+      <select name="org">
+        <option value="">Alle Organisationen</option>
+        {% for o in organizations %}
+          <option value="{{ o.pk }}"{% if organization == o.pk|stringformat:"s" %} selected{% endif %}>{{ o.name }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+    {% if teams %}
+      <select name="team">
+        <option value="">Alle Teams</option>
+        {% for t in teams %}
+          <option value="{{ t.pk }}"{% if team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+  {% endif %}
+  <button class="btn" type="submit">Filtern</button>
+</form>
+
+<div class="panel flush">
+  <table>
+    <thead>
+      <tr>
+        <th>Nr.</th><th>Betreff</th><th>Status</th><th>Priorität</th>
+        <th>Gemeldet von</th>
+        <th>Bearbeiter</th><th>Fällig bis</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tickets %}
+        <tr>
+          <td class="muted">#{{ t.pk }}</td>
+          <td><a href="{{ t.get_absolute_url }}">{{ t.title }}</a>{% if t.kind %} <span class="badge kind-{{ t.kind }}">{{ t.get_kind_display }}</span>{% endif %}{% if t.category %} <span class="muted">· {{ t.category }}</span>{% endif %}{% if user.is_staff and t.team %} <span class="muted">· {{ t.team }}</span>{% endif %}</td>
+          <td><span class="badge status-{{ t.status }}">{{ t.get_status_display }}</span>{% if user.is_staff and t.response_overdue %} <span class="badge overdue">Antwort fehlt</span>{% endif %}</td>
+          <td><span class="badge prio-{{ t.priority }}">{{ t.get_priority_display }}</span></td>
+          <td>{{ t.requester.get_full_name|default:t.requester.username }}{% if user.is_staff and t.organization %}<br><span class="muted small">{{ t.organization }}</span>{% endif %}</td>
+          <td>{% if t.assignee %}{{ t.assignee.get_full_name|default:t.assignee.username }}{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>
+            {% if t.is_open and t.sla_paused %}
+              <span class="muted">pausiert</span>
+            {% elif t.is_open and t.due_at %}
+              {{ t.due_at|date:"d.m.Y H:i" }}{% if t.is_overdue %} <span class="badge overdue">überfällig</span>{% endif %}
+            {% else %}<span class="muted">–</span>{% endif %}
+            {% if user.is_staff and t.follow_up_on %}<br><span class="muted small">Wiedervorlage {{ t.follow_up_on|date:"d.m." }}</span>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="muted empty">Keine Tickets gefunden.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "_pagination.html" %}
+{% endblock %}

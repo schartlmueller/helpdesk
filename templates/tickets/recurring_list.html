@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}Wiederkehrende Tickets · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Wiederkehrende Tickets</h1>
+  <span class="spacer"></span>
+  <a class="btn" href="{% url 'tickets:planner' %}">Zur Wochenplanung</a>
+  <a class="btn primary" href="{% url 'tickets:recurring_create' %}">Neu</a>
+</div>
+<p class="muted">Aus jeder Vorlage entsteht zum Termin automatisch ein Ticket, das am Termin-Tag in der Wochenplanung steht.</p>
+
+<div class="panel flush">
+  <table>
+    <thead><tr><th>Betreff</th><th>Wiederholung</th><th>Nächster Termin</th><th>Bearbeiter</th><th>Aufwand</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for r in items %}
+        <tr>
+          <td><a href="{% url 'tickets:recurring_edit' r.pk %}">{{ r.title }}</a></td>
+          <td>{{ r.get_interval_display }}</td>
+          <td>{{ r.next_run|date:"D, d.m.Y" }}{% if r.lead_days %} <span class="muted">(Anlage {{ r.lead_days }} Tage vorher)</span>{% endif %}</td>
+          <td>{% if r.assignee %}{{ r.assignee.get_full_name|default:r.assignee.username }}{% elif r.team %}{{ r.team }}{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>{% if r.estimated_minutes %}{{ r.estimated_minutes|minutes }}{% else %}<span class="muted">–</span>{% endif %}</td>
+          <td>{% if r.active %}<span class="badge status-resolved">aktiv</span>{% else %}<span class="badge">pausiert</span>{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="muted empty">Noch keine wiederkehrenden Tickets.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

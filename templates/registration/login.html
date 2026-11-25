@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Anmelden · Helpdesk{% endblock %}
+{% block content %}
+<div class="login">
+  <h1>Helpdesk</h1>
+  <form method="post" class="panel">{% csrf_token %}
+    {% include "_form.html" %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn primary" type="submit">Anmelden</button>
+  </form>
+  {% if sso_enabled %}
+    <p class="sso"><a class="btn" href="{% url 'oidc_authentication_init' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Mit Single Sign-On anmelden</a></p>
+  {% endif %}
+  <p class="sso"><a href="{% url 'password_reset' %}">Passwort vergessen oder noch keines gesetzt?</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}Leistungsnachweis · Helpdesk{% endblock %}
+{% block content %}
+<h1>Leistungsnachweis</h1>
+
+<form method="get" class="filters">
+  <select name="org" required>
+    <option value="">Organisation wählen</option>
+    {% for o in organizations %}
+      <option value="{{ o.pk }}"{% if org_id == o.pk|stringformat:"s" %} selected{% endif %}>{{ o.name }}</option>
+    {% endfor %}
+  </select>
+  <label class="inline">Von <input type="date" name="von" value="{{ start|date:'Y-m-d' }}"></label>
+  <label class="inline">Bis <input type="date" name="bis" value="{{ end|date:'Y-m-d' }}"></label>
+  <button class="btn" type="submit">Anzeigen</button>
+  {% if organization %}
+    <a class="btn primary" href="?org={{ organization.pk }}&amp;von={{ start|date:'Y-m-d' }}&amp;bis={{ end|date:'Y-m-d' }}&amp;format=pdf">Als PDF herunterladen</a>
+  {% endif %}
+</form>
+
+{% if organization %}
+  <section class="panel">
+    <h2>{{ organization.name }} · {{ start|date:"d.m.Y" }} bis {{ end|date:"d.m.Y" }} · Summe {{ total|duration }}</h2>
+    {% for g in groups %}
+      <div class="report-user">
+        <div class="report-head">
+          <strong><a href="{{ g.url }}">{{ g.label }}</a></strong>
+          <span>{{ g.seconds|duration }}</span>
+        </div>
+        <table class="mini">
+          {% for line in g.lines %}
+            <tr>
+              <td class="nowrap">{{ line.date }}</td>
+              <td>{{ line.person }}</td>
+              <td class="muted nowrap">{{ line.time }}</td>
+              <td>{{ line.note }}</td>
+              <td class="right nowrap">{{ line.seconds|duration }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      </div>
+    {% empty %}
+      <p class="muted">Für diese Organisation wurde im Zeitraum keine Zeit gebucht.</p>
+    {% endfor %}
+  </section>
+  <p class="muted small">Enthalten sind beendete Zeiteinträge an Tickets der Organisation und an Aufgaben ihrer Projekte. Laufende Uhren zählen erst nach dem Stoppen.</p>
+{% else %}
+  <p class="muted">{% if organizations %}Organisation und Zeitraum wählen.{% else %}Es gibt noch keine Organisationen. Lege sie unter <a href="{% url 'organizations' %}">Organisationen</a> an.{% endif %}</p>
+{% endif %}
+{% endblock %}

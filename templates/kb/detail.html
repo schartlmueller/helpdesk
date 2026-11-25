@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}{{ article.title }} · Wissensbasis{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>{{ article.title }}</h1>
+  {% if article.status != "published" %}<span class="badge kb-{{ article.status }}">{{ article.get_status_display }}</span>{% endif %}
+</div>
+
+<article class="panel reading">
+  <h2>Problem</h2>
+  <div class="text markdown">{{ article.problem|md }}</div>
+  <h2>Lösung</h2>
+  <div class="text markdown">{{ article.solution|md }}</div>
+  <p class="muted meta">
+    {% if article.category %}{{ article.category }} · {% endif %}
+    Zuletzt geändert am {{ article.updated_at|date:"d.m.Y" }}
+    {% if user.is_staff and article.source_ticket %} · aus Ticket <a href="{{ article.source_ticket.get_absolute_url }}">#{{ article.source_ticket.pk }}</a>{% endif %}
+    {% if votes %} · {{ votes.yes }} hilfreich, {{ votes.no }} nicht hilfreich{% endif %}
+    {% if user.is_staff and article.organization %} · nur sichtbar für {{ article.organization }}{% endif %}
+  </p>
+</article>
+
+{% if article.status == "published" %}
+  <form method="post" action="{% url 'kb:vote' article.pk %}" class="panel reading vote">{% csrf_token %}
+    <span>Hat dieser Artikel geholfen?</span>
+    <button class="btn small{% if my_vote and my_vote.helpful %} primary{% endif %}" type="submit" name="helpful" value="1">Ja</button>
+    <button class="btn small{% if my_vote and not my_vote.helpful %} primary{% endif %}" type="submit" name="helpful" value="0">Nein</button>
+    {% if my_vote %}<span class="muted small">Danke, deine Rückmeldung ist gespeichert.</span>{% endif %}
+  </form>
+{% endif %}
+
+<div class="actions">
+  {% if user.is_staff %}
+    <a class="btn" href="{% url 'kb:edit' article.pk %}">Bearbeiten</a>
+    {% if article.status != "published" %}
+      <form method="post" action="{% url 'kb:publish' article.pk %}">{% csrf_token %}
+        <button class="btn primary" type="submit">Freigeben</button>
+      </form>
+    {% endif %}
+    {% if article.status != "archived" %}
+      <form method="post" action="{% url 'kb:archive' article.pk %}">{% csrf_token %}
+        <button class="btn" type="submit">Archivieren</button>
+      </form>
+    {% endif %}
+  {% endif %}
+  <a class="btn" href="{% url 'tickets:create' %}">Hat nicht geholfen – Ticket anlegen</a>
+</div>
+{% endblock %}

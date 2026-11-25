@@ -1,0 +1,155 @@
+x-app-env: &app-env
+  SECRET_KEY: ${SECRET_KEY:-bitte-in-der-env-datei-aendern}
+  DEBUG: ${DEBUG:-0}
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+  BEHIND_HTTPS_PROXY: ${BEHIND_HTTPS_PROXY:-0}
+  SITE_URL: ${SITE_URL:-http://localhost:8000}
+  TIME_ZONE: ${TIME_ZONE:-Europe/Vienna}
+  POSTGRES_HOST: db
+  POSTGRES_DB: helpdesk
+  POSTGRES_USER: helpdesk
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-helpdesk}
+  ADMIN_USER: ${ADMIN_USER:-admin}
+  ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+  ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+  MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
+  CLAMAV_HOST: ${CLAMAV_HOST:-}
+  CLAMAV_PORT: ${CLAMAV_PORT:-3310}
+  # Zielzeiten und Geschäftszeiten
+  SLA_BUSINESS_HOURS: ${SLA_BUSINESS_HOURS:-1}
+  BUSINESS_OPEN: ${BUSINESS_OPEN:-08:00}
+  BUSINESS_CLOSE: ${BUSINESS_CLOSE:-17:00}
+  BUSINESS_DAYS: ${BUSINESS_DAYS:-1,2,3,4,5}
+  SLA_HOURS_URGENT: ${SLA_HOURS_URGENT:-}
+  SLA_HOURS_HIGH: ${SLA_HOURS_HIGH:-}
+  SLA_HOURS_NORMAL: ${SLA_HOURS_NORMAL:-}
+  SLA_HOURS_LOW: ${SLA_HOURS_LOW:-}
+  SLA_RESPONSE_HOURS_URGENT: ${SLA_RESPONSE_HOURS_URGENT:-}
+  SLA_RESPONSE_HOURS_HIGH: ${SLA_RESPONSE_HOURS_HIGH:-}
+  SLA_RESPONSE_HOURS_NORMAL: ${SLA_RESPONSE_HOURS_NORMAL:-}
+  SLA_RESPONSE_HOURS_LOW: ${SLA_RESPONSE_HOURS_LOW:-}
+  HOLIDAY_COUNTRY: ${HOLIDAY_COUNTRY:-AT}
+  AUTO_CLOSE_DAYS: ${AUTO_CLOSE_DAYS:-7}
+  WAITING_REMINDER_DAYS: ${WAITING_REMINDER_DAYS:-3}
+  WAITING_CLOSE_DAYS: ${WAITING_CLOSE_DAYS:-10}
+  TIMER_MAX_HOURS: ${TIMER_MAX_HOURS:-10}
+  RETENTION_DAYS: ${RETENTION_DAYS:-0}
+  LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+  LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES:-15}
+  # E-Mail-Versand
+  EMAIL_HOST: ${EMAIL_HOST:-}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-1}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-helpdesk@example.com}
+  # E-Mail-Eingang
+  IMAP_HOST: ${IMAP_HOST:-}
+  IMAP_PORT: ${IMAP_PORT:-}
+  IMAP_SSL: ${IMAP_SSL:-1}
+  IMAP_USER: ${IMAP_USER:-}
+  IMAP_PASSWORD: ${IMAP_PASSWORD:-}
+  IMAP_FOLDER: ${IMAP_FOLDER:-INBOX}
+  MAIL_POLL_SECONDS: ${MAIL_POLL_SECONDS:-60}
+  MAIL_ALLOWED_DOMAINS: ${MAIL_ALLOWED_DOMAINS:-}
+  IMAP_OAUTH_TENANT: ${IMAP_OAUTH_TENANT:-}
+  IMAP_OAUTH_CLIENT_ID: ${IMAP_OAUTH_CLIENT_ID:-}
+  IMAP_OAUTH_CLIENT_SECRET: ${IMAP_OAUTH_CLIENT_SECRET:-}
+  # LDAP / Active Directory
+  LDAP_SERVER_URI: ${LDAP_SERVER_URI:-}
+  LDAP_BIND_DN: ${LDAP_BIND_DN:-}
+  LDAP_BIND_PASSWORD: ${LDAP_BIND_PASSWORD:-}
+  LDAP_START_TLS: ${LDAP_START_TLS:-0}
+  LDAP_USER_BASE: ${LDAP_USER_BASE:-}
+  LDAP_USER_FILTER: ${LDAP_USER_FILTER:-}
+  LDAP_GROUP_BASE: ${LDAP_GROUP_BASE:-}
+  LDAP_GROUP_TYPE: ${LDAP_GROUP_TYPE:-ad}
+  LDAP_STAFF_GROUP: ${LDAP_STAFF_GROUP:-}
+  LDAP_ADMIN_GROUP: ${LDAP_ADMIN_GROUP:-}
+  # Single Sign-On (OpenID Connect)
+  OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+  OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+  OIDC_AUTHORIZATION_ENDPOINT: ${OIDC_AUTHORIZATION_ENDPOINT:-}
+  OIDC_TOKEN_ENDPOINT: ${OIDC_TOKEN_ENDPOINT:-}
+  OIDC_USER_ENDPOINT: ${OIDC_USER_ENDPOINT:-}
+  OIDC_JWKS_ENDPOINT: ${OIDC_JWKS_ENDPOINT:-}
+  OIDC_SIGN_ALGO: ${OIDC_SIGN_ALGO:-RS256}
+  OIDC_SCOPES: ${OIDC_SCOPES:-openid email profile}
+  OIDC_STAFF_GROUP: ${OIDC_STAFF_GROUP:-}
+  OIDC_GROUPS_CLAIM: ${OIDC_GROUPS_CLAIM:-groups}
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: helpdesk
+      POSTGRES_USER: helpdesk
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-helpdesk}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helpdesk -d helpdesk"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build: .
+    image: helpdesk-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8000}:8000"
+    environment: *app-env
+    volumes:
+      - media_data:/app/media
+
+  # Hintergrunddienst: E-Mail-Abruf, Eskalation überfälliger Tickets,
+  # Stoppen vergessener Uhren und Löschfristen.
+  worker:
+    build: .
+    image: helpdesk-app
+    restart: unless-stopped
+    depends_on:
+      - web
+    entrypoint: ["python", "manage.py", "worker"]
+    environment: *app-env
+    volumes:
+      - media_data:/app/media
+
+  # Tägliche Sicherung von Datenbank und Anhängen in den Ordner ./backups
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["sh", "/backup.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: helpdesk
+      PGDATABASE: helpdesk
+      PGPASSWORD: ${POSTGRES_PASSWORD:-helpdesk}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - media_data:/media:ro
+
+  # Virenscanner, nur mit: docker compose --profile clamav up -d
+  # und CLAMAV_HOST=clamav in der .env. Braucht etwa 2 GB Arbeitsspeicher.
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    profiles: ["clamav"]
+    volumes:
+      - clamav_data:/var/lib/clamav
+
+volumes:
+  db_data:
+  media_data:
+  clamav_data:

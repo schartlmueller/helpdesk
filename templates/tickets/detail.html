@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% load helpdesk %}
+{% block title %}#{{ ticket.pk }} {{ ticket.title }} · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1><span class="muted">#{{ ticket.pk }}</span> {{ ticket.title }}</h1>
+  <span class="badge status-{{ ticket.status }}">{{ ticket.get_status_display }}</span>
+  {% if ticket.escalated_at and ticket.is_open %}<span class="badge overdue">eskaliert</span>{% endif %}
+  {% if user.is_staff and ticket.response_overdue %}<span class="badge overdue">Antwort fehlt</span>{% endif %}
+</div>
+
+{% if ticket.merged_into %}
+  <div class="message">Dieses Ticket wurde in <a href="{{ ticket.merged_into.get_absolute_url }}">Ticket #{{ ticket.merged_into.pk }}</a> zusammengeführt und wird dort weiterbearbeitet.</div>
+{% endif %}
+
+<div class="grid-main">
+  <div>
+    <section class="panel">
+      <h2>Problembeschreibung</h2>
+      <div class="text">{{ ticket.description|urlize|linebreaksbr }}</div>
+      {% if ticket_attachments %}
+        <ul class="files">
+          {% for f in ticket_attachments %}
+            <li><a href="{{ f.get_absolute_url }}">{{ f.name }}</a> <span class="muted">{{ f.size|filesizeformat }}</span></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <p class="muted meta">
+        {{ ticket.requester.get_full_name|default:ticket.requester.username }} · {{ ticket.created_at|date:"d.m.Y H:i" }}
+        {% if ticket.cc %} · in Kopie: {{ ticket.cc }}{% endif %}
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Verlauf</h2>
+      {% for c in comments %}
+        <div class="comment{% if c.internal %} internal{% endif %}{% if c.is_solution %} solution{% endif %}">
+          <div class="comment-head">
+            <strong>{% if c.author %}{{ c.author.get_full_name|default:c.author.username }}{% else %}Gelöschter Benutzer{% endif %}</strong>
+            <span class="muted">{{ c.created_at|date:"d.m.Y H:i" }}</span>
+            {% if c.is_solution %}<span class="badge status-resolved">Lösung</span>{% endif %}
+            {% if c.internal %}<span class="badge internal-tag">Interne Notiz</span>{% endif %}
+          </div>
+          <div class="text">{{ c.body|urlize|linebreaksbr }}</div>
+          {% if c.attachments.all %}
+            <ul class="files">
+              {% for f in c.attachments.all %}
+                <li><a href="{{ f.get_absolute_url }}">{{ f.name }}</a> <span class="muted">{{ f.size|filesizeformat }}</span></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p class="muted">Noch keine Antworten.</p>
+      {% endfor %}
+
+      {% if not ticket.merged_into %}
+        <form method="post" enctype="multipart/form-data" action="{% url 'tickets:comment' ticket.pk %}" class="stack">{% csrf_token %}
+          {% if canned %}
+            <div class="field">
+              <label for="canned">Textbaustein einfügen</label>
+              <select id="canned" class="js-canned">
+                <option value="">– auswählen –</option>
+                {% for item in canned %}<option value="{{ item.body }}">{{ item.title }}</option>{% endfor %}
+              </select>
+            </div>
+          {% endif %}
+          {% include "_form.html" with form=comment_form %}
+          <div class="actions"><button class="btn" type="submit">Antwort senden</button></div>
+        </form>
+      {% endif %}
+    </section>
+
+    {% if user.is_staff %}
+      <section class="panel">
+        <h2>Checkliste{% if checklist %} <span class="muted">{{ checklist_done }} von {{ checklist|length }} erledigt</span>{% endif %}</h2>
+        {% for item in checklist %}
+          <form method="post" action="{% url 'tickets:checklist_change' ticket.pk item.pk %}" class="check-row{% if item.done %} done{% endif %}">{% csrf_token %}
+            <button class="check-box" type="submit" title="{% if item.done %}Wieder öffnen{% else %}Abhaken{% endif %}" aria-label="{% if item.done %}Wieder öffnen{% else %}Abhaken{% endif %}">{% if item.done %}✓{% endif %}</button>
+            <span class="check-text">{{ item.text }}{% if item.done and item.done_by %} <span class="muted small">{{ item.done_by.get_full_name|default:item.done_by.username }}, {{ item.done_at|date:"d.m. H:i" }}</span>{% endif %}</span>
+            <button class="linklike danger-text" type="submit" name="delete" value="1" title="Punkt löschen">×</button>
+          </form>
+        {% empty %}
+          <p class="muted small">Keine Punkte. Für Abläufe wie Eintritt oder Austritt eines Mitarbeiters eine Vorlage einfügen.</p>
+        {% endfor %}
+        <details{% if not checklist %} open{% endif %}>
+          <summary>Punkt oder Vorlage hinzufügen</summary>
+          <form method="post" action="{% url 'tickets:checklist_add' ticket.pk %}" class="block">{% csrf_token %}
+            {% include "_form.html" with form=checklist_form %}
+            <button class="btn small" type="submit">Hinzufügen</button>
+          </form>
+        </details>
+      </section>
+    {% endif %}
+
+    {% if resolve_form %}
+      <section class="panel resolve">
+        <h2>Ticket lösen</h2>
+        {% if checklist and checklist_done < checklist|length %}
+          <div class="message">In der Checkliste sind noch Punkte offen.</div>
+        {% endif %}
+        {% if suggestions %}
+          <div class="suggestions">
+            <p class="muted">Passende Artikel aus der Wissensbasis:</p>
+            {% for a in suggestions %}
+              <div class="suggestion">
+                <a href="{{ a.get_absolute_url }}" target="_blank" rel="noopener">{{ a.title }}</a>
+                <button type="button" class="btn small js-adopt" data-solution="{{ a.solution }}">Lösung übernehmen</button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <form method="post" action="{% url 'tickets:resolve' ticket.pk %}">{% csrf_token %}
+          {% include "_form.html" with form=resolve_form %}
+          <div class="actions"><button class="btn primary" type="submit">Lösen und Melder benachrichtigen</button></div>
+          <small class="muted">Die Zeiterfassung wird dabei automatisch beendet.</small>
+        </form>
+      </section>
+    {% endif %}
+
+    {% if user.is_staff %}
+      <details class="panel">
+        <summary>Änderungsverlauf ({{ events|length }})</summary>
+        <table class="mini">
+          {% for e in events %}
+            <tr>
+              <td class="muted nowrap">{{ e.created_at|date:"d.m.Y H:i" }}</td>
+              <td class="nowrap">{% if e.user %}{{ e.user.get_full_name|default:e.user.username }}{% else %}System{% endif %}</td>
+              <td>{{ e.text }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="muted">Noch keine Änderungen.</td></tr>
+          {% endfor %}
+        </table>
+      </details>
+    {% endif %}
+  </div>
+
+  <aside>
+    {% if user.is_staff %}
+      <section class="panel timer-panel{% if my_timer_running %} running{% endif %}">
+        <h2>Zeiterfassung</h2>
+        <p class="timer">
+          <strong id="timer" data-seconds="{{ total_seconds }}" data-running="{% if timer_running %}1{% else %}0{% endif %}">{{ total_seconds|duration }}</strong>
+          {% if ticket.estimated_minutes %}<span class="muted">von {{ ticket.estimated_minutes|minutes }} geplant</span>{% endif %}
+        </p>
+        {% if ticket.is_open %}
+          {% if my_timer_running %}
+            <form method="post" action="{% url 'tickets:pause' ticket.pk %}">{% csrf_token %}
+              <button class="btn" type="submit">Pause</button>
+              <span class="muted small">Deine Uhr läuft.</span>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'tickets:start' ticket.pk %}">{% csrf_token %}
+              <button class="btn primary" type="submit">{% if my_timer_used %}Fortsetzen{% else %}Bearbeitung starten{% endif %}</button>
+            </form>
+          {% endif %}
+        {% endif %}
+        {% if time_entries %}
+          <table class="mini">
+            {% for e in time_entries %}
+              <tr>
+                <td>{{ e.user.get_full_name|default:e.user.username }}</td>
+                <td class="muted">{{ e.started_at|date:"d.m. H:i" }}–{% if e.ended_at %}{{ e.ended_at|date:"H:i" }}{% else %}läuft{% endif %}{% if e.note %}<br>{{ e.note }}{% endif %}</td>
+                <td class="right nowrap">{{ e.seconds|duration }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+        {% endif %}
+        <details>
+          <summary>Zeit nachtragen</summary>
+          <form method="post" action="{% url 'tickets:time_add' ticket.pk %}" class="block">{% csrf_token %}
+            {% include "_form.html" with form=manual_time_form %}
+            <button class="btn small" type="submit">Eintragen</button>
+          </form>
+        </details>
+      </section>
+    {% endif %}
+
+    <section class="panel">
+      <h2>Details</h2>
+      <dl class="meta-list">
+        <dt>Priorität</dt><dd><span class="badge prio-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span></dd>
+        <dt>Art</dt><dd>{% if ticket.kind %}<span class="badge kind-{{ ticket.kind }}">{{ ticket.get_kind_display }}</span>{% else %}<span class="muted">nicht eingestuft</span>{% endif %}</dd>
+        <dt>Kategorie</dt><dd>{{ ticket.category|default:"–" }}</dd>
+        {% if ticket.organization %}<dt>Organisation</dt><dd>{{ ticket.organization }}</dd>{% endif %}
+        {% if user.is_staff %}<dt>Team</dt><dd>{{ ticket.team|default:"–" }}</dd>{% endif %}
+        <dt>Bearbeiter</dt><dd>{% if ticket.assignee %}{{ ticket.assignee.get_full_name|default:ticket.assignee.username }}{% else %}–{% endif %}</dd>
+        {% if user.is_staff and ticket.response_due_at %}
+          <dt>Erste Antwort</dt>
+          <dd>{% if ticket.first_response_at %}{{ ticket.first_response_at|date:"d.m.Y H:i" }}{% if ticket.first_response_at > ticket.response_due_at %} <span class="badge overdue">zu spät</span>{% endif %}{% elif ticket.is_open %}bis {{ ticket.response_due_at|date:"d.m.Y H:i" }}{% if ticket.response_overdue %} <span class="badge overdue">überfällig</span>{% endif %}{% else %}–{% endif %}</dd>
+        {% endif %}
+        {% if ticket.is_open and ticket.due_at %}
+          <dt>Fällig bis</dt>
+          <dd>{% if ticket.sla_paused %}<span class="badge status-waiting">pausiert</span> <span class="muted small">wartet seit {{ ticket.sla_paused_at|date:"d.m. H:i" }}, die Zielzeit läuft nicht</span>{% else %}{{ ticket.due_at|date:"d.m.Y H:i" }}{% if ticket.is_overdue %} <span class="badge overdue">überfällig</span>{% endif %}{% endif %}</dd>
+        {% endif %}
+        {% if user.is_staff and ticket.pool_week %}<dt>Wochenpool</dt><dd>KW {{ ticket.pool_week|date:"W" }} <span class="muted small">ab {{ ticket.pool_week|date:"d.m." }}</span></dd>{% endif %}
+        {% if user.is_staff and ticket.follow_up_on %}<dt>Wiedervorlage</dt><dd>{{ ticket.follow_up_on|date:"D, d.m.Y" }}</dd>{% endif %}
+        {% if user.is_staff and ticket.planned_for %}<dt>Geplant für</dt><dd>{{ ticket.planned_for|date:"d.m.Y" }}</dd>{% endif %}
+        {% if ticket.resolved_at %}<dt>Gelöst am</dt><dd>{{ ticket.resolved_at|date:"d.m.Y H:i" }}</dd>{% endif %}
+        {% if user.is_staff and ticket.project %}<dt>Projekt</dt><dd><a href="{{ ticket.project.get_absolute_url }}">{{ ticket.project.name }}</a></dd>{% endif %}
+      </dl>
+      {% if user.is_staff and ticket.is_open %}
+        <div class="actions pool-actions">
+          {% if ticket.pool_week %}
+            {% if not ticket.assignee %}
+              <form method="post" action="{% url 'tickets:pool_take' ticket.pk %}">{% csrf_token %}
+                <input type="hidden" name="next" value="{{ ticket.get_absolute_url }}">
+                <button class="btn small primary" type="submit">Übernehmen</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{% url 'tickets:pool_remove' ticket.pk %}">{% csrf_token %}
+              <input type="hidden" name="next" value="{{ ticket.get_absolute_url }}">
+              <button class="btn small" type="submit">Aus dem Wochenpool nehmen</button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'tickets:pool_add' %}">{% csrf_token %}
+              <input type="hidden" name="next" value="{{ ticket.get_absolute_url }}">
+              <input type="hidden" name="tickets" value="{{ ticket.pk }}">
+              <input type="hidden" name="woche" value="{{ this_monday|date:'Y-m-d' }}">
+              <button class="btn small" type="submit">In den Wochenpool dieser Woche</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if not ticket.is_open and not ticket.merged_into %}
+        <form method="post" action="{% url 'tickets:reopen' ticket.pk %}">{% csrf_token %}
+          <button class="btn" type="submit">Problem besteht weiter – wieder öffnen</button>
+        </form>
+      {% endif %}
+    </section>
+
+    {% if article %}
+      {% if user.is_staff or article.status == "published" %}
+        <section class="panel">
+          <h2>Wissensartikel</h2>
+          <p><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></p>
+          <span class="badge kb-{{ article.status }}">{{ article.get_status_display }}</span>
+        </section>
+      {% endif %}
+    {% endif %}
+
+    {% if user.is_staff %}
+      <section class="panel">
+        <h2>Verknüpfte Tickets</h2>
+        {% if ticket.parent %}
+          <div class="link-row">
+            <span><span class="muted">Hauptticket:</span> <a href="{{ ticket.parent.get_absolute_url }}">#{{ ticket.parent.pk }} {{ ticket.parent.title }}</a></span>
+            <form method="post" action="{% url 'tickets:unlink' ticket.pk ticket.parent.pk %}">{% csrf_token %}<button class="linklike danger-text" type="submit">lösen</button></form>
+          </div>
+        {% endif %}
+        {% for c in children %}
+          <div class="link-row">
+            <span><span class="muted">Unterticket:</span> <a href="{{ c.get_absolute_url }}">#{{ c.pk }} {{ c.title }}</a> <span class="badge status-{{ c.status }}">{{ c.get_status_display }}</span></span>
+            <form method="post" action="{% url 'tickets:unlink' ticket.pk c.pk %}">{% csrf_token %}<button class="linklike danger-text" type="submit">lösen</button></form>
+          </div>
+        {% endfor %}
+        {% for r in related_tickets %}
+          <div class="link-row">
+            <span><span class="muted">Hängt zusammen:</span> <a href="{{ r.get_absolute_url }}">#{{ r.pk }} {{ r.title }}</a> <span class="badge status-{{ r.status }}">{{ r.get_status_display }}</span></span>
+            <form method="post" action="{% url 'tickets:unlink' ticket.pk r.pk %}">{% csrf_token %}<button class="linklike danger-text" type="submit">lösen</button></form>
+          </div>
+        {% endfor %}
+        {% if not ticket.parent and not children and not related_tickets %}
+          <p class="muted small">Keine Verknüpfungen. Bei einer Störung mit vielen Betroffenen: ein Hauptticket anlegen und die Meldungen als Untertickets anhängen. Beim Lösen des Haupttickets lassen sich alle auf einmal lösen.</p>
+        {% endif %}
+        <details>
+          <summary>Verknüpfung hinzufügen</summary>
+          <form method="post" action="{% url 'tickets:link' ticket.pk %}" class="block">{% csrf_token %}
+            {% include "_form.html" with form=link_form %}
+            <button class="btn small" type="submit">Verknüpfen</button>
+          </form>
+        </details>
+      </section>
+    {% endif %}
+
+    {% if update_form and not ticket.merged_into %}
+      <section class="panel">
+        <h2>Bearbeiten und planen</h2>
+        <form method="post" action="{% url 'tickets:update' ticket.pk %}">{% csrf_token %}
+          {% include "_form.html" with form=update_form %}
+          <div class="actions"><button class="btn" type="submit">Speichern</button></div>
+        </form>
+      </section>
+    {% endif %}
+
+    {% if merge_form %}
+      <details class="panel">
+        <summary>Doppeltes Ticket zusammenführen</summary>
+        <form method="post" action="{% url 'tickets:merge' ticket.pk %}" class="block">{% csrf_token %}
+          <p class="muted small">Antworten, Anhänge und Zeiten wandern in das andere Ticket. Dieses Ticket wird geschlossen.</p>
+          {% include "_form.html" with form=merge_form %}
+          <button class="btn small" type="submit">Zusammenführen</button>
+        </form>
+      </details>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

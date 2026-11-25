@@ -1,0 +1,10 @@
+<form method="post" action="{% url 'tickets:pool_assign' t.pk %}" class="assign-form">{% csrf_token %}
+  <select name="user" aria-label="Bearbeiter" onchange="this.form.submit()">
+    <option value="">– frei –</option>
+    {% for u in staff_users %}<option value="{{ u.pk }}"{% if u.pk == t.assignee_id %} selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+  </select>
+  <noscript><button class="btn small" type="submit">Zuordnen</button></noscript>
+</form>
+<form method="post" action="{% url 'tickets:pool_remove' t.pk %}">{% csrf_token %}
+  <button class="linklike danger-text" type="submit" title="Aus dem Wochenpool nehmen">aus dem Pool</button>
+</form>

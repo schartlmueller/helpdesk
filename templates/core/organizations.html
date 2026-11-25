@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Organisationen · Helpdesk{% endblock %}
+{% block content %}
+<div class="head">
+  <h1>Organisationen</h1>
+  <span class="spacer"></span>
+  <a class="btn primary" href="{% url 'organization_create' %}">Neue Organisation</a>
+</div>
+<p class="muted">Kunden oder Abteilungen. Jeder Melder gehört zu höchstens einer Organisation, seine Tickets automatisch auch. Ansprechpartner sehen alle Tickets ihrer Organisation.</p>
+
+<div class="panel flush">
+  <table>
+    <thead><tr><th>Name</th><th>E-Mail-Domains</th><th>Mitglieder</th><th>Offene Tickets</th><th></th></tr></thead>
+    <tbody>
+      {% for o in organizations %}
+        <tr>
+          <td><a href="{% url 'organization_edit' o.pk %}">{{ o.name }}</a>{% if not o.active %} <span class="badge">inaktiv</span>{% endif %}</td>
+          <td>{{ o.email_domains|default:"–" }}</td>
+          <td>{{ o.member_count }}</td>
+          <td><a href="{% url 'tickets:list' %}?org={{ o.pk }}">{{ o.open_tickets }}</a></td>
+          <td class="right"><a class="btn small" href="{% url 'tickets:service_report' %}?org={{ o.pk }}">Leistungsnachweis</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="muted empty">Noch keine Organisationen.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

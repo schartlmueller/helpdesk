@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Störungsmeldung · Helpdesk{% endblock %}
+{% block content %}
+<h1>{% if item %}Meldung bearbeiten{% else %}Neue Störungsmeldung{% endif %}</h1>
+<form method="post" class="panel reading">{% csrf_token %}
+  {% include "_form.html" %}
+  <div class="actions">
+    <button class="btn primary" type="submit">Speichern</button>
+    <a class="btn" href="{% url 'announcements' %}">Abbrechen</a>
+    {% if item %}
+      <span class="spacer"></span>
+      <button class="btn danger" type="submit" name="delete" value="1" formnovalidate>Löschen</button>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

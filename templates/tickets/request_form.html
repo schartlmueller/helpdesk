@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ template.name }} · Helpdesk{% endblock %}
+{% block content %}
+<h1>{{ template.name }}</h1>
+{% if template.description %}<p class="text lead">{{ template.description|urlize|linebreaksbr }}</p>{% endif %}
+<form method="post" enctype="multipart/form-data" class="panel reading">{% csrf_token %}
+  {% include "_form.html" %}
+  <div class="actions">
+    <button class="btn primary" type="submit">Anfrage abschicken</button>
+    <a class="btn" href="{% url 'tickets:create' %}">Zurück</a>
+  </div>
+</form>
+{% endblock %}
