@@ -1,29 +1,110 @@
 /* Design "ebner.ticket"
-   VORLÄUFIGE FARBEN: Die Werte unten sind Platzhalter, keine geprüften
-   Firmenfarben. Zum Anpassen genügen diese Zeilen; alles andere richtet sich
-   danach. Jede Farbe gibt es einmal für das helle und einmal für das dunkle Design.
+   Abgeleitet von https://www.elektro-ebner.at/ (Stand 25.11.2026):
 
-   --accent        Knöpfe, Links, Hervorhebungen
+   Farben   Gelb #ffd830 · Rot #e2202a · Grau #3e3e3e · warmes Weiß #f4f2ec
+            (auf der Website als --gelb, --rot, --grau hinterlegt)
+   Schrift  Die Website setzt alles in "Maison Neue Book" (kostenpflichtig).
+            Hier steht dafür die frei verwendbare Hanken Grotesk (SIL OFL,
+            siehe static/fonts/LICENSE-Hanken-Grotesk.txt).
+   Formen   Keine Rundungen, dünne Rahmen, Überschriften in normaler Stärke
+            und Rot, Links mit roter Unterstreichung.
+
+   Abweichungen von der Website, weil dies ein Arbeitswerkzeug ist:
+   - Gelb trägt nur die Seitenleiste, nicht die ganze Seite.
+   - Fließtext und Menü sind grau statt rot: Rot auf Gelb ist für kleine
+     Schrift zu kontrastarm, und Rot steht in der Anwendung auch für Fehler
+     und Überfälliges.
+   - Im dunklen Design tauschen die Farben wie in den grauen Abschnitten der
+     Website: grauer Grund, gelbe Hervorhebung.
+
+   --accent        Knöpfe und Hervorhebungen
    --accent-strong dieselbe Farbe beim Überfahren mit der Maus
    --accent-soft   sehr helle Tönung, z. B. für "heute" in der Planung
    --on-accent     Schrift auf der Akzentfarbe
-   --link          Links im Text (ohne Angabe: wie --accent)
+   --link          Links im Text
    --signal        Markierung der aktiven Seite in der Seitenleiste
-   --on-signal     Schrift auf der Signalfarbe (ohne Angabe: dunkel)
+   --on-signal     Schrift auf der Signalfarbe
    --rail          Hintergrund der Seitenleiste
-   --rail-ink      Schrift in der Seitenleiste */
+   --rail-ink      Schrift in der Seitenleiste
+   --rail-strong   hervorgehobene Schrift in der Seitenleiste
+   --rail-label    Zwischentitel in der Seitenleiste
+   --rail-hover / --rail-active  Hinterlegung der Menüpunkte
+   --heading       Farbe der Seitenüberschrift */
+
+@font-face {
+  font-family: "Hanken Grotesk"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("../fonts/hanken-grotesk-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk"; font-weight: 500; font-style: normal; font-display: swap;
+  src: url("../fonts/hanken-grotesk-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Hanken Grotesk"; font-weight: 600; font-style: normal; font-display: swap;
+  src: url("../fonts/hanken-grotesk-latin-600-normal.woff2") format("woff2");
+}
 
 :root {
-  --accent: #1657b8; --accent-strong: #0f4190; --accent-soft: #e2ecfb; --on-accent: #ffffff;
-  --signal: #ffd200; --rail: #12233f; --rail-ink: #c3cde0;
+  --bg: #f4f2ec; --panel: #ffffff; --sunken: #ebe8df;
+  --ink: #262626; --ink-2: #3e3e3e; --muted: #6b6962;
+  --line: #e0dcd0; --line-strong: #c4bfb1;
+  --accent: #e2202a; --accent-strong: #b91720; --accent-soft: #fff3bf; --on-accent: #ffffff;
+  --link: var(--ink); --heading: #e2202a;
+  --signal: #e2202a; --on-signal: #ffffff;
+  --rail: #ffd830; --rail-ink: #3e3e3e; --rail-strong: #1f1f1f; --rail-label: #5f5520;
+  --rail-hover: rgba(62, 62, 62, .09); --rail-active: rgba(255, 255, 255, .55);
+  --radius: 0px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --accent: #6ea8f5; --accent-strong: #93bff8; --accent-soft: #172b4a; --on-accent: #07182f;
-    --rail: #0b1526;
+    --bg: #232323; --panel: #2c2c2c; --sunken: #363636;
+    --ink: #f1eee6; --ink-2: #d3cfc4; --muted: #a39f94;
+    --line: #3e3e3e; --line-strong: #585858;
+    --accent: #ffd830; --accent-strong: #ffe46e; --accent-soft: #453d14; --on-accent: #262626;
+    --heading: #ffd830;
+    --signal: #ffd830; --on-signal: #262626;
+    --rail: #1a1a1a; --rail-ink: #cfcabd; --rail-strong: #ffffff; --rail-label: #8f8b80;
+    --rail-hover: rgba(255, 255, 255, .06); --rail-active: rgba(255, 255, 255, .09);
   }
 }
 :root[data-theme="dark"] {
-  --accent: #6ea8f5; --accent-strong: #93bff8; --accent-soft: #172b4a; --on-accent: #07182f;
-  --rail: #0b1526;
+  --bg: #232323; --panel: #2c2c2c; --sunken: #363636;
+  --ink: #f1eee6; --ink-2: #d3cfc4; --muted: #a39f94;
+  --line: #3e3e3e; --line-strong: #585858;
+  --accent: #ffd830; --accent-strong: #ffe46e; --accent-soft: #453d14; --on-accent: #262626;
+  --heading: #ffd830;
+  --signal: #ffd830; --on-signal: #262626;
+  --rail: #1a1a1a; --rail-ink: #cfcabd; --rail-strong: #ffffff; --rail-label: #8f8b80;
+  --rail-hover: rgba(255, 255, 255, .06); --rail-active: rgba(255, 255, 255, .09);
 }
+
+/* Schrift */
+body { font-family: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif; }
+h1 { font-size: 1.55rem; font-weight: 400; letter-spacing: -.02em; color: var(--heading); }
+.tile strong { font-weight: 500; }
+
+/* Links: Textfarbe mit roter (dunkel: gelber) Linie, wie im Kopf der Website */
+main a:not(.btn):not(.tile):not(.row-link):not(.running-chip) {
+  text-decoration: underline; text-decoration-color: var(--accent);
+  text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+main a:not(.btn):not(.tile):not(.row-link):hover { color: var(--accent-strong); }
+.row-link:hover { color: var(--accent-strong); }
+
+/* Knöpfe: eckig, dünner Rahmen, beim Überfahren gefüllt */
+.btn { font-weight: 400; background: transparent; border-color: var(--ink-2); }
+.btn:hover { background: var(--ink-2); border-color: var(--ink-2); color: var(--panel); }
+.btn.primary:hover { color: var(--on-accent); }
+.btn.danger:hover { background: var(--danger); border-color: var(--danger); color: var(--panel); }
+
+/* Eckig auch dort, wo die Grundgestaltung feste Rundungen setzt */
+.badge, .bar, .bar span, .markdown code, .timeline-track, .tl-bar, .viz-key { border-radius: 0; }
+
+/* Seitenleiste: hell gelb mit grauer Schrift, dunkel grau mit gelber Markierung */
+.brand, .brand-word b { color: var(--rail-strong); }
+.brand-word { color: var(--rail-ink); }
+.sidebar .brand-word b { font-weight: 500; }
+.nav-label { color: var(--rail-label); }
+.nav-link:hover { background: var(--rail-hover); color: var(--rail-strong); }
+.nav-link.active { background: var(--rail-active); color: var(--rail-strong); }
+.login-brand { color: var(--ink); }

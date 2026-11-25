@@ -6,9 +6,17 @@ Lege das Logo eines Designs in den passenden Ordner:
   static/brand/forstenlechner/logo.svg   (oder logo.png)
 
 Es ersetzt dann den Schriftzug in der Seitenleiste und auf der Anmeldeseite.
-Die Seitenleiste ist dunkel; am besten eignet sich eine helle oder weiße
-Fassung des Logos mit durchsichtigem Hintergrund, etwa 400 Pixel breit.
+Am besten mit durchsichtigem Hintergrund, etwa 400 Pixel breit.
 
-Optional für das dunkle Design der Anmeldeseite: logo-dark.svg bzw. logo-dark.png.
+  forstenlechner  Die Seitenleiste ist immer dunkel, die Anmeldeseite im
+                  hellen Design weiß. logo.svg sollte daher auf beidem lesbar
+                  sein; sonst die schwarze Fassung als logo.svg und die weiße
+                  als logo-dark.svg ablegen und prüfen.
+  ebner           Die Seitenleiste ist im hellen Design gelb wie die Website,
+                  im dunklen Design dunkelgrau. logo.svg ist die übliche
+                  Fassung (rot/grau), logo-dark.svg eine helle Fassung.
+
+logo-dark.svg bzw. logo-dark.png ist optional und gilt im dunklen Design für
+Seitenleiste und Anmeldeseite.
 
 Nach dem Ablegen:  docker compose up -d --build

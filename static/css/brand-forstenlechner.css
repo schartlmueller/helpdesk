@@ -1,31 +1,106 @@
 /* Design "forstenlechner.ticket"
-   VORLÄUFIGE FARBEN: Die Werte unten sind Platzhalter, keine geprüften
-   Firmenfarben. Zum Anpassen genügen diese Zeilen; alles andere richtet sich
-   danach. Jede Farbe gibt es einmal für das helle und einmal für das dunkle Design.
+   Abgeleitet von https://www.forstenlechner.at/ (Stand 25.11.2026):
 
-   --accent        Knöpfe, Links, Hervorhebungen
+   Farben   Schwarz und Weiß über Fotos mit dunklem, blaugrauem Schleier
+            (#191d22); als einzige Farbe ein Blau (#0075be) für Links.
+   Schrift  Die Website setzt Menü, Rubriken und Knöpfe in "Heimat Mono"
+            und Überschriften in "Calibre" Thin/Light (beide kostenpflichtig).
+            Hier stehen dafür die frei verwendbaren IBM Plex Mono und
+            IBM Plex Sans Light (SIL OFL, siehe static/fonts/LICENSE-IBM-Plex.txt).
+   Formen   Keine Rundungen, dünne Linien, Rubriken in gesperrten
+            Großbuchstaben, Knöpfe als schmaler Rahmen mit Mono-Schrift.
+
+   Abweichungen von der Website, weil dies ein Arbeitswerkzeug ist:
+   - Fließtext bleibt in normaler Stärke; die sehr dünne Schrift der
+     Website ist in dichten Listen schlecht lesbar.
+   - Links sind eine Spur dunkler als das Blau der Website (#0068ab), damit
+     sie auch auf grauem Grund gut lesbar sind.
+
+   --accent        Knöpfe und Hervorhebungen (hell: fast schwarz, dunkel: weiß)
    --accent-strong dieselbe Farbe beim Überfahren mit der Maus
    --accent-soft   sehr helle Tönung, z. B. für "heute" in der Planung
    --on-accent     Schrift auf der Akzentfarbe
-   --link          Links im Text; hier bewusst nicht rot, weil Rot in der
-                   Anwendung für Fehler und Überfälliges steht
+   --link          Links im Text
    --signal        Markierung der aktiven Seite in der Seitenleiste
    --on-signal     Schrift auf der Signalfarbe
    --rail          Hintergrund der Seitenleiste
-   --rail-ink      Schrift in der Seitenleiste */
+   --rail-ink      Schrift in der Seitenleiste
+   --mono          Schrift für Menü, Rubriken und Knöpfe */
+
+@font-face {
+  font-family: "IBM Plex Sans"; font-weight: 300; font-style: normal; font-display: swap;
+  src: url("../fonts/ibm-plex-sans-latin-300-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("../fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono"; font-weight: 500; font-style: normal; font-display: swap;
+  src: url("../fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
+}
 
 :root {
-  --accent: #b3202b; --accent-strong: #8a1720; --accent-soft: #fbe4e5; --on-accent: #ffffff;
-  --signal: #e2303c; --on-signal: #ffffff; --rail: #26292c; --rail-ink: #cdd0d3;
-  --link: #2d4a63;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --bg: #f2f3f4; --panel: #ffffff; --sunken: #e8eaec;
+  --ink: #0b0d10; --ink-2: #2f363d; --muted: #606973;
+  --line: #dcdfe2; --line-strong: #b7bcc2;
+  --accent: #191d22; --accent-strong: #000000; --accent-soft: #e1edf5; --on-accent: #ffffff;
+  --link: #0068ab;
+  --signal: #ffffff; --on-signal: #191d22;
+  --rail: #191d22; --rail-ink: #c9ced4;
+  --radius: 0px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --accent: #f0747c; --accent-strong: #f59aa0; --accent-soft: #42191c; --on-accent: #2b0709;
-    --rail: #111314; --link: #a9c0d6;
+    --bg: #111418; --panel: #191d22; --sunken: #21262c;
+    --ink: #f2f4f5; --ink-2: #cdd2d7; --muted: #949ca5;
+    --line: #2b3138; --line-strong: #454d56;
+    --accent: #ffffff; --accent-strong: #d3d8dd; --accent-soft: #1c3345; --on-accent: #191d22;
+    --link: #62b5ec;
+    --rail: #0b0d10;
   }
 }
 :root[data-theme="dark"] {
-  --accent: #f0747c; --accent-strong: #f59aa0; --accent-soft: #42191c; --on-accent: #2b0709;
-  --rail: #111314; --link: #a9c0d6;
+  --bg: #111418; --panel: #191d22; --sunken: #21262c;
+  --ink: #f2f4f5; --ink-2: #cdd2d7; --muted: #949ca5;
+  --line: #2b3138; --line-strong: #454d56;
+  --accent: #ffffff; --accent-strong: #d3d8dd; --accent-soft: #1c3345; --on-accent: #191d22;
+  --link: #62b5ec;
+  --rail: #0b0d10;
 }
+
+/* Überschriften: leicht und eng wie die Zeilen über den Fotos der Website */
+h1 { font-size: 1.7rem; font-weight: 300; letter-spacing: -.03em; }
+.tile strong { font-weight: 300; font-size: 1.6rem; }
+
+/* Rubriken: Mono, Großbuchstaben, gesperrt */
+h2, th, .nav-label, .field > label {
+  font-family: var(--mono); font-weight: 400; text-transform: uppercase; letter-spacing: .14em;
+}
+h2 { font-size: .74rem; color: var(--ink-2); }
+th { font-size: .68rem; }
+.field > label { font-size: .7rem; }
+.nav-label { font-size: .64rem; letter-spacing: .28em; padding-top: 1.1rem; }
+
+/* Menü und Knöpfe in Mono */
+.nav-link { font-family: var(--mono); font-size: .82rem; }
+.btn { font-family: var(--mono); font-size: .8rem; font-weight: 400; background: transparent; border-color: var(--ink); }
+.btn:hover { background: var(--ink); border-color: var(--ink); color: var(--panel); }
+.btn.primary:hover { color: var(--on-accent); }
+.btn.danger:hover { background: var(--danger); border-color: var(--danger); color: var(--panel); }
+.btn.small { font-size: .74rem; }
+.badge, .count { font-family: var(--mono); font-size: .74rem; }
+.running-chip { color: var(--link); border-radius: 0; }
+
+/* Eckig auch dort, wo die Grundgestaltung feste Rundungen setzt */
+.badge, .bar, .bar span, .markdown code, .timeline-track, .tl-bar, .viz-key { border-radius: 0; }
+
+/* Schriftzug, solange kein Logo abgelegt ist: Name in Großbuchstaben */
+.brand-word { font-family: var(--mono); font-size: .72rem; letter-spacing: .08em; }
+.brand-word b {
+  display: block; font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 1.02rem; font-weight: 600; letter-spacing: .01em; text-transform: uppercase;
+}
+.login-brand .brand-word { font-size: .9rem; }
+.login-brand .brand-word b { font-size: 1.7rem; }

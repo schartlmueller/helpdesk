@@ -12,22 +12,29 @@ wurde. Die Funktionen selbst beschreibt die `README.md`.
   (lokal mit SQLite geprüft). Noch nicht nach `main` übernommen; der Auftraggeber
   hat die Richtung mit „sieht gut aus“ bestätigt, die Firmenfarben fehlen noch.
 
-## Nächste Aufgabe
+## Designs nach den Firmenauftritten (25.11.2026 umgesetzt)
 
-Die beiden Designs an die Firmenauftritte anpassen:
+Die beiden Designs folgen jetzt den Websites; die Herleitung steht jeweils im
+Kopf der Datei.
 
-- `ebner.ticket` nach https://www.elektro-ebner.at/
-- `forstenlechner.ticket` nach https://www.forstenlechner.at/
+- `ebner.ticket` (`static/css/brand-ebner.css`) nach https://www.elektro-ebner.at/:
+  Gelb #ffd830, Rot #e2202a, Grau #3e3e3e, warmes Weiß; gelbe Seitenleiste,
+  eckige Formen, rote Überschriften. Schrift Hanken Grotesk als freier Ersatz
+  für Maison Neue.
+- `forstenlechner.ticket` (`static/css/brand-forstenlechner.css`) nach
+  https://www.forstenlechner.at/: Schwarz-Weiß mit Blaugrau #191d22, Blau nur
+  für Links; Menü, Rubriken und Knöpfe in IBM Plex Mono (Ersatz für Heimat
+  Mono), leichte Überschriften (Ersatz für Calibre), eckige Formen.
 
-Bisher stehen in `static/css/brand-ebner.css` und
-`static/css/brand-forstenlechner.css` nur Platzhalterfarben (Blau bzw. Rot), weil
-die Websites nicht abrufbar waren. Zu übernehmen sind Hauptfarbe und
-Zweitfarben, Schrift (oder eine frei verwendbare ähnliche), Formensprache der
-Knöpfe und Flächen. Es bleibt ein dichtes Arbeitswerkzeug, keine Kopie der
-Homepage.
+Die Schriftdateien liegen mit Lizenz (SIL OFL) unter `static/fonts/`.
 
-Die **Logos** liefert der Auftraggeber als Datei; sie werden unter
-`static/brand/<name>/logo.svg` oder `logo.png` abgelegt und nicht nachgezeichnet.
+**Noch offen: die Logos.** Sie sind bisher nicht im Repository; bis dahin
+steht der Schriftzug. Der Auftraggeber liefert sie als Datei; sie werden unter
+`static/brand/<name>/logo.svg` oder `logo.png` abgelegt und nicht
+nachgezeichnet (Hinweise in `static/brand/LIESMICH.txt`).
+
+Vom Auftraggeber noch nicht abgenommen: die gelbe Seitenleiste bei Ebner und
+Schwarz statt Blau als Knopffarbe bei Forstenlechner.
 
 Noch offen ist die Frage, wie die beiden Namen genutzt werden: zwei getrennte
 Installationen, eine gemeinsame unter zwei Adressen (`BRAND_HOSTS`) oder nur
