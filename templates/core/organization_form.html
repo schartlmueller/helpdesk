@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Organisation · Helpdesk{% endblock %}
+{% block title %}Organisation · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="head">
   <h1>{% if organization %}{{ organization.name }}{% else %}Neue Organisation{% endif %}</h1>

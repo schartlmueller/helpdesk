@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load helpdesk %}
-{% block title %}Wochenpool KW {{ week_number }} · Helpdesk{% endblock %}
+{% block title %}Wochenpool KW {{ week_number }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="head">
   <h1>Wochenpool <span class="muted">KW {{ week_number }} · {{ monday|date:"d.m." }}–{{ friday|date:"d.m.Y" }}</span></h1>

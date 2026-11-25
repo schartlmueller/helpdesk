@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load helpdesk %}
-{% block title %}#{{ ticket.pk }} {{ ticket.title }} · Helpdesk{% endblock %}
+{% block title %}#{{ ticket.pk }} {{ ticket.title }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <div class="head">
   <h1><span class="muted">#{{ ticket.pk }}</span> {{ ticket.title }}</h1>

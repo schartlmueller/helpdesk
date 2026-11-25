@@ -1,0 +1,31 @@
+/* Design "forstenlechner.ticket"
+   VORLÄUFIGE FARBEN: Die Werte unten sind Platzhalter, keine geprüften
+   Firmenfarben. Zum Anpassen genügen diese Zeilen; alles andere richtet sich
+   danach. Jede Farbe gibt es einmal für das helle und einmal für das dunkle Design.
+
+   --accent        Knöpfe, Links, Hervorhebungen
+   --accent-strong dieselbe Farbe beim Überfahren mit der Maus
+   --accent-soft   sehr helle Tönung, z. B. für "heute" in der Planung
+   --on-accent     Schrift auf der Akzentfarbe
+   --link          Links im Text; hier bewusst nicht rot, weil Rot in der
+                   Anwendung für Fehler und Überfälliges steht
+   --signal        Markierung der aktiven Seite in der Seitenleiste
+   --on-signal     Schrift auf der Signalfarbe
+   --rail          Hintergrund der Seitenleiste
+   --rail-ink      Schrift in der Seitenleiste */
+
+:root {
+  --accent: #b3202b; --accent-strong: #8a1720; --accent-soft: #fbe4e5; --on-accent: #ffffff;
+  --signal: #e2303c; --on-signal: #ffffff; --rail: #26292c; --rail-ink: #cdd0d3;
+  --link: #2d4a63;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #f0747c; --accent-strong: #f59aa0; --accent-soft: #42191c; --on-accent: #2b0709;
+    --rail: #111314; --link: #a9c0d6;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #f0747c; --accent-strong: #f59aa0; --accent-soft: #42191c; --on-accent: #2b0709;
+  --rail: #111314; --link: #a9c0d6;
+}

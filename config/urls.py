@@ -4,6 +4,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from core import views as core_views
+from core.brands import brand_for
 from core.forms import SetOrResetPasswordForm, ThrottledAuthenticationForm
 from tickets.planner import calendar_feed
 
@@ -20,7 +21,11 @@ urlpatterns = [
     path("passwort/geaendert/", auth_views.PasswordChangeDoneView.as_view(), name="password_change_done"),
     path(
         "passwort/vergessen/",
-        auth_views.PasswordResetView.as_view(form_class=SetOrResetPasswordForm),
+        auth_views.PasswordResetView.as_view(
+            form_class=SetOrResetPasswordForm,
+            # E-Mails entstehen ohne Seitenaufruf-Kontext; hier gilt die Grundeinstellung.
+            extra_email_context={"brand": brand_for()},
+        ),
         name="password_reset",
     ),
     path("passwort/gesendet/", auth_views.PasswordResetDoneView.as_view(), name="password_reset_done"),
@@ -49,5 +54,5 @@ urlpatterns = [
 if settings.SSO_ENABLED:
     urlpatterns.append(path("oidc/", include("mozilla_django_oidc.urls")))
 
-admin.site.site_header = "Helpdesk Verwaltung"
-admin.site.site_title = "Helpdesk"
+admin.site.site_header = f"{brand_for()['name']} Verwaltung"
+admin.site.site_title = brand_for()["name"]

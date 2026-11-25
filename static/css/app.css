@@ -30,7 +30,9 @@
   --accent-strong: #094f4e;
   --accent-soft: #e2f1ef;
   --on-accent: #ffffff;
+  --link: var(--accent);    /* Links; ein Design kann sie von der Akzentfarbe trennen */
   --signal: #f5c400;        /* Signalgelb: nur die Markierung der aktiven Seite */
+  --on-signal: #1c2226;     /* Schrift auf der Signalfarbe */
   --rail: #23282d;          /* Seitenleiste, in beiden Schemata dunkel */
   --rail-ink: #c4cad0;
   --danger: #b3261e;
@@ -91,7 +93,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-a { color: var(--accent); text-decoration: none; }
+a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -107,7 +109,7 @@ p { margin: 0 0 .6rem; }
 .struck { text-decoration: line-through; color: var(--muted); }
 .warn-text, .danger-text { color: var(--danger); }
 .danger-text, .link-text { font-size: .86rem; }
-.link-text { color: var(--accent); }
+.link-text { color: var(--link); }
 
 /* ---------- Rahmen der Anwendung ---------- */
 
@@ -124,6 +126,21 @@ body.app {
 }
 .brand { display: block; padding: .35rem 1rem .8rem; font-size: 1.05rem; font-weight: 600; color: #fff; letter-spacing: -.01em; }
 .brand:hover { text-decoration: none; }
+/* Schriftzug: Firmenname kräftig, Zusatz leicht. Ein eigenes Logo ersetzt ihn. */
+.brand-word { font-weight: 400; color: rgba(255, 255, 255, .62); }
+.brand-word b { font-weight: 600; color: #fff; }
+.brand-logo { display: block; max-width: 100%; max-height: 34px; }
+.only-dark { display: none; }
+:root[data-theme="dark"] .only-dark { display: block; }
+:root[data-theme="dark"] .only-light { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .only-dark { display: block; }
+  :root:not([data-theme="light"]) .only-light { display: none; }
+}
+.login-brand { font-size: 1.6rem; }
+.login-brand .brand-word { color: var(--muted); }
+.login-brand .brand-word b { color: var(--ink); }
+.login-brand .brand-logo { margin: 0 auto; max-height: 56px; }
 .nav-label { padding: .9rem 1rem .25rem; font-size: .78rem; color: #8b949c; }
 .nav-link {
   display: flex; align-items: center; justify-content: space-between; gap: .5rem;
@@ -131,7 +148,7 @@ body.app {
 }
 .nav-link:hover { background: rgba(255, 255, 255, .06); color: #fff; text-decoration: none; }
 .nav-link.active { background: rgba(255, 255, 255, .09); color: #fff; font-weight: 500; box-shadow: inset 3px 0 0 var(--signal); }
-.sidebar .count { background: var(--signal); color: #1c2226; }
+.sidebar .count { background: var(--signal); color: var(--on-signal); }
 .backdrop { display: none; }
 
 .topbar {
@@ -212,7 +229,7 @@ a.tile:hover { border-color: var(--accent); text-decoration: none; }
 
 .row-link { display: block; padding: .4rem 0; border-top: 1px solid var(--line); color: var(--ink); }
 .row-link:first-of-type { border-top: 0; }
-.row-link:hover { color: var(--accent); text-decoration: none; }
+.row-link:hover { color: var(--link); text-decoration: none; }
 .row-link.split { display: flex; justify-content: space-between; gap: 1rem; }
 div.row-link { cursor: default; }
 div.row-link:hover { color: var(--ink); }

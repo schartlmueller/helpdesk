@@ -1,0 +1,14 @@
+Eigene Logos
+
+Lege das Logo eines Designs in den passenden Ordner:
+
+  static/brand/ebner/logo.svg            (oder logo.png)
+  static/brand/forstenlechner/logo.svg   (oder logo.png)
+
+Es ersetzt dann den Schriftzug in der Seitenleiste und auf der Anmeldeseite.
+Die Seitenleiste ist dunkel; am besten eignet sich eine helle oder weiße
+Fassung des Logos mit durchsichtigem Hintergrund, etwa 400 Pixel breit.
+
+Optional für das dunkle Design der Anmeldeseite: logo-dark.svg bzw. logo-dark.png.
+
+Nach dem Ablegen:  docker compose up -d --build

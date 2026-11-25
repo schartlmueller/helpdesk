@@ -5,6 +5,8 @@ x-app-env: &app-env
   CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
   BEHIND_HTTPS_PROXY: ${BEHIND_HTTPS_PROXY:-0}
   SITE_URL: ${SITE_URL:-http://localhost:8000}
+  BRAND: ${BRAND:-helpdesk}
+  BRAND_HOSTS: ${BRAND_HOSTS:-}
   TIME_ZONE: ${TIME_ZONE:-Europe/Vienna}
   POSTGRES_HOST: db
   POSTGRES_DB: helpdesk

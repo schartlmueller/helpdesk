@@ -1104,3 +1104,39 @@ class PoolTests(Base):
         self.client.post(reverse("tickets:pool_remove", args=[self.ticket.pk]))
         self.ticket.refresh_from_db()
         self.assertIsNone(self.ticket.pool_week)
+
+
+class BrandTests(Base):
+    def test_default_brand_is_neutral(self):
+        page = self.client.get(reverse("login"))
+        self.assertContains(page, "<b>Helpdesk</b>")
+        self.assertNotContains(page, "brand-ebner.css")
+
+    @override_settings(BRAND="ebner")
+    def test_brand_from_setting(self):
+        page = self.client.get(reverse("login"))
+        self.assertContains(page, "<b>ebner</b>.ticket")
+        self.assertContains(page, "css/brand-ebner.css")
+        self.assertContains(page, "<title>Anmelden · ebner.ticket</title>")
+
+    @override_settings(BRAND="ebner", BRAND_HOSTS={"forstenlechner.ticket": "forstenlechner"})
+    def test_brand_follows_hostname(self):
+        page = self.client.get(reverse("login"), HTTP_HOST="forstenlechner.ticket")
+        self.assertContains(page, "<b>forstenlechner</b>.ticket")
+        self.assertContains(self.client.get(reverse("login")), "<b>ebner</b>.ticket")
+
+    def test_staff_can_preview_a_brand(self):
+        self.client.login(username="anna", password="pw")
+        page = self.client.get(reverse("dashboard"), {"design": "ebner"})
+        self.assertNotContains(page, "brand-ebner.css")  # Melder können nichts umstellen
+
+        self.client.login(username="agent", password="pw")
+        self.assertContains(self.client.get(reverse("dashboard"), {"design": "ebner"}), "brand-ebner.css")
+        self.assertContains(self.client.get(reverse("tickets:list")), "brand-ebner.css")  # bleibt
+        page = self.client.get(reverse("dashboard"), {"design": "aus"})
+        self.assertNotContains(page, "brand-ebner.css")
+
+    @override_settings(BRAND="forstenlechner")
+    def test_ticket_title_uses_brand_name(self):
+        self.client.login(username="agent", password="pw")
+        self.assertContains(self.client.get(reverse("tickets:list")), "<title>Tickets · forstenlechner.ticket</title>")

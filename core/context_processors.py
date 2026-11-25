@@ -4,6 +4,7 @@ from django.db.models import Q
 from kb.models import Article
 from tickets.models import TimeEntry
 
+from .brands import BRANDS, brand_for
 from .models import Announcement
 from .orgs import membership_of
 
@@ -38,8 +39,21 @@ def _active_section(request):
 
 
 def nav(request):
-    context = {"sso_enabled": settings.SSO_ENABLED, "nav_active": _active_section(request)}
     user = getattr(request, "user", None)
+    # Bearbeiter können ein Design mit ?design=... ansehen, ohne es umzustellen;
+    # ?design=aus beendet die Vorschau.
+    wanted = request.GET.get("design")
+    if wanted and user is not None and user.is_authenticated and user.is_staff:
+        if wanted in BRANDS:
+            request.session["brand_preview"] = wanted
+        else:
+            request.session.pop("brand_preview", None)
+
+    context = {
+        "sso_enabled": settings.SSO_ENABLED,
+        "nav_active": _active_section(request),
+        "brand": brand_for(request),
+    }
     if user is None or not user.is_authenticated:
         return context
 

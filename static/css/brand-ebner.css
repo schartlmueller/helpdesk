@@ -1,0 +1,29 @@
+/* Design "ebner.ticket"
+   VORLÄUFIGE FARBEN: Die Werte unten sind Platzhalter, keine geprüften
+   Firmenfarben. Zum Anpassen genügen diese Zeilen; alles andere richtet sich
+   danach. Jede Farbe gibt es einmal für das helle und einmal für das dunkle Design.
+
+   --accent        Knöpfe, Links, Hervorhebungen
+   --accent-strong dieselbe Farbe beim Überfahren mit der Maus
+   --accent-soft   sehr helle Tönung, z. B. für "heute" in der Planung
+   --on-accent     Schrift auf der Akzentfarbe
+   --link          Links im Text (ohne Angabe: wie --accent)
+   --signal        Markierung der aktiven Seite in der Seitenleiste
+   --on-signal     Schrift auf der Signalfarbe (ohne Angabe: dunkel)
+   --rail          Hintergrund der Seitenleiste
+   --rail-ink      Schrift in der Seitenleiste */
+
+:root {
+  --accent: #1657b8; --accent-strong: #0f4190; --accent-soft: #e2ecfb; --on-accent: #ffffff;
+  --signal: #ffd200; --rail: #12233f; --rail-ink: #c3cde0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #6ea8f5; --accent-strong: #93bff8; --accent-soft: #172b4a; --on-accent: #07182f;
+    --rail: #0b1526;
+  }
+}
+:root[data-theme="dark"] {
+  --accent: #6ea8f5; --accent-strong: #93bff8; --accent-soft: #172b4a; --on-accent: #07182f;
+  --rail: #0b1526;
+}

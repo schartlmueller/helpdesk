@@ -81,6 +81,35 @@ oder über die Schnittstelle (`kind`: `bug`, `feature`, `nice`). Die Ticketliste
 die Übersicht und die Statistik lassen sich danach filtern bzw. auswerten.
 Tickets per E-Mail kommen zunächst als „nicht eingestuft“ an.
 
+## Erscheinungsbild
+
+Die Oberfläche hat eine Seitenleiste, eine Kopfzeile mit Ticketsuche und ein
+helles sowie ein dunkles Design (Umschalter oben rechts, sonst nach
+Systemeinstellung). Die Schrift IBM Plex Sans liegt im Projekt; der Browser ruft
+nichts von außen ab.
+
+**Austauschbares Design:** Drei Designs sind angelegt: `helpdesk` (neutral),
+`ebner` (ebner.ticket) und `forstenlechner` (forstenlechner.ticket). Sie
+unterscheiden sich in Name, Farben und optional im Logo.
+
+- **Grundeinstellung:** `BRAND=ebner` oder `BRAND=forstenlechner` in der `.env`,
+  danach `docker compose up -d`.
+- **Je Adresse ein Design:** Läuft dieselbe Installation unter zwei Namen, ordnet
+  `BRAND_HOSTS=ebner.ticket=ebner,forstenlechner.ticket=forstenlechner` jedem
+  Hostnamen sein Design zu. Daten und Benutzer bleiben dabei gemeinsam.
+- **Vorschau:** Bearbeiter hängen `?design=ebner` oder `?design=forstenlechner` an
+  eine Adresse, um ein Design anzusehen; `?design=aus` beendet die Vorschau.
+  Sie gilt nur für die eigene Sitzung.
+- **Farben anpassen:** Jedes Design ist eine kleine Datei
+  `static/css/brand-<name>.css` mit einer Handvoll Farbwerten, jeweils für hell
+  und dunkel. Die mitgelieferten Werte sind Platzhalter und keine geprüften
+  Firmenfarben.
+- **Logo:** Eine Datei `static/brand/<name>/logo.svg` oder `logo.png` ersetzt den
+  Schriftzug in der Seitenleiste und auf der Anmeldeseite; Hinweise stehen in
+  `static/brand/LIESMICH.txt`.
+- **Weiteres Design:** Eintrag in `core/brands.py` ergänzen und eine Farbdatei
+  nach dem Muster der vorhandenen anlegen.
+
 ## Organisationen (Kunden oder Abteilungen)
 
 Unter **Mehr → Organisationen** legen Bearbeiter Kunden oder Abteilungen an und

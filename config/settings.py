@@ -108,6 +108,17 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# --- Erscheinungsbild ----------------------------------------------------------
+# Grundeinstellung: helpdesk (neutral), ebner oder forstenlechner
+BRAND = os.environ.get("BRAND", "helpdesk").strip().lower() or "helpdesk"
+# Optional je Adresse ein anderes Design, z. B.
+# BRAND_HOSTS=ebner.ticket=ebner,forstenlechner.ticket=forstenlechner
+BRAND_HOSTS = {
+    host.strip().lower(): key.strip().lower()
+    for host, _, key in (item.partition("=") for item in env_list("BRAND_HOSTS"))
+    if host.strip() and key.strip()
+}
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"

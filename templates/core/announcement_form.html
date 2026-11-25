@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Störungsmeldung · Helpdesk{% endblock %}
+{% block title %}Störungsmeldung · {{ brand.name }}{% endblock %}
 {% block content %}
 <h1>{% if item %}Meldung bearbeiten{% else %}Neue Störungsmeldung{% endif %}</h1>
 <form method="post" class="panel reading">{% csrf_token %}

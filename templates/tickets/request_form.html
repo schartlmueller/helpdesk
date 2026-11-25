@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ template.name }} · Helpdesk{% endblock %}
+{% block title %}{{ template.name }} · {{ brand.name }}{% endblock %}
 {% block content %}
 <h1>{{ template.name }}</h1>
 {% if template.description %}<p class="text lead">{{ template.description|urlize|linebreaksbr }}</p>{% endif %}

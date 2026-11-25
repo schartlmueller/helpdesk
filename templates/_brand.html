@@ -1,0 +1,1 @@
+{% if brand.logo %}<img class="brand-logo{% if brand.logo_dark %} only-light{% endif %}" src="{{ brand.logo }}" alt="{{ brand.name }}">{% if brand.logo_dark %}<img class="brand-logo only-dark" src="{{ brand.logo_dark }}" alt="{{ brand.name }}">{% endif %}{% else %}<span class="brand-word"><b>{{ brand.strong }}</b>{{ brand.light }}</span>{% endif %}
