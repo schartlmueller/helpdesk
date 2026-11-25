@@ -78,6 +78,7 @@ class AbsenceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["user"].queryset = _staff()
+        self.fields["user"].label_from_instance = _name
 
     def clean(self):
         cleaned = super().clean()
@@ -118,6 +119,7 @@ class RecurringForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["assignee"].queryset = _staff()
+        self.fields["assignee"].label_from_instance = _name
 
 
 # --- Wochenplanung ------------------------------------------------------------
@@ -129,6 +131,7 @@ def _ticket_item(ticket, day=None):
     return {
         "kind": "ticket",
         "id": ticket.pk,
+        "assignee_name": _name(ticket.assignee) if ticket.assignee_id else "",
         "ref": f"#{ticket.pk}",
         "title": ticket.title,
         "url": ticket.get_absolute_url(),

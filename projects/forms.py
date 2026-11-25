@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from tickets.forms import CameraField, MultipleFileField
+from tickets.forms import CameraField, MultipleFileField, user_label
 
 from .models import Milestone, Project, Task, TaskComment
 
@@ -27,6 +27,7 @@ class ProjectForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["owner"].queryset = _staff_users()
+        self.fields["owner"].label_from_instance = user_label
 
 
 class TaskForm(forms.ModelForm):
@@ -54,6 +55,7 @@ class TaskForm(forms.ModelForm):
     def __init__(self, *args, project, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["assignee"].queryset = _staff_users()
+        self.fields["assignee"].label_from_instance = user_label
         self.fields["milestone"].queryset = project.milestones.all()
 
 

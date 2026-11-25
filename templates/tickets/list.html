@@ -3,7 +3,7 @@
 {% block content %}
 <div class="head">
   <h1>Tickets</h1>
-  <a class="btn primary" href="{% url 'tickets:create' %}">Neues Ticket</a>
+  <span class="muted">{{ page.paginator.count }} gefunden</span>
 </div>
 
 <form method="get" class="filters">
@@ -53,10 +53,10 @@
 </form>
 
 <div class="panel flush">
-  <table>
+  <table class="tight">
     <thead>
       <tr>
-        <th>Nr.</th><th>Betreff</th><th>Status</th><th>Priorität</th>
+        <th>Nr.</th><th>Betreff</th><th>Status</th><th>Priorität</th><th>Kategorie</th>
         <th>Gemeldet von</th>
         <th>Bearbeiter</th><th>Fällig bis</th>
       </tr>
@@ -65,22 +65,23 @@
       {% for t in tickets %}
         <tr>
           <td class="muted">#{{ t.pk }}</td>
-          <td><a href="{{ t.get_absolute_url }}">{{ t.title }}</a>{% if t.kind %} <span class="badge kind-{{ t.kind }}">{{ t.get_kind_display }}</span>{% endif %}{% if t.category %} <span class="muted">· {{ t.category }}</span>{% endif %}{% if user.is_staff and t.team %} <span class="muted">· {{ t.team }}</span>{% endif %}</td>
+          <td class="col-main"><a href="{{ t.get_absolute_url }}">{{ t.title }}</a>{% if t.kind %} <span class="badge kind-{{ t.kind }}">{{ t.get_kind_display }}</span>{% endif %}</td>
           <td><span class="badge status-{{ t.status }}">{{ t.get_status_display }}</span>{% if user.is_staff and t.response_overdue %} <span class="badge overdue">Antwort fehlt</span>{% endif %}</td>
           <td><span class="badge prio-{{ t.priority }}">{{ t.get_priority_display }}</span></td>
-          <td>{{ t.requester.get_full_name|default:t.requester.username }}{% if user.is_staff and t.organization %}<br><span class="muted small">{{ t.organization }}</span>{% endif %}</td>
+          <td class="muted"{% if user.is_staff and t.team %} title="Team: {{ t.team }}"{% endif %}>{{ t.category|default:"–" }}</td>
+          <td>{{ t.requester.get_full_name|default:t.requester.username }}{% if user.is_staff and t.organization %} <span class="muted clip" title="{{ t.organization }}">{{ t.organization }}</span>{% endif %}</td>
           <td>{% if t.assignee %}{{ t.assignee.get_full_name|default:t.assignee.username }}{% else %}<span class="muted">–</span>{% endif %}</td>
           <td>
             {% if t.is_open and t.sla_paused %}
               <span class="muted">pausiert</span>
             {% elif t.is_open and t.due_at %}
-              {{ t.due_at|date:"d.m.Y H:i" }}{% if t.is_overdue %} <span class="badge overdue">überfällig</span>{% endif %}
+              {{ t.due_at|date:"d.m. H:i" }}{% if t.is_overdue %} <span class="badge overdue">überfällig</span>{% endif %}
             {% else %}<span class="muted">–</span>{% endif %}
-            {% if user.is_staff and t.follow_up_on %}<br><span class="muted small">Wiedervorlage {{ t.follow_up_on|date:"d.m." }}</span>{% endif %}
+            {% if user.is_staff and t.follow_up_on %} <span class="muted small" title="Wiedervorlage">↻ {{ t.follow_up_on|date:"d.m." }}</span>{% endif %}
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="7" class="muted empty">Keine Tickets gefunden.</td></tr>
+        <tr><td colspan="8" class="muted empty">Keine Tickets gefunden.</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -31,7 +31,7 @@
       <h2>Wochenpool KW {{ week_number }} <span class="muted">{{ pool|length }} ohne festen Tag</span> <a class="btn small" href="{% url 'tickets:pool' %}?woche={{ monday|date:'Y-m-d' }}">Pool öffnen</a></h2>
       <div class="pool-cards">
         {% for item, ticket in pool %}
-          {% include "tickets/_plan_card.html" with extra=ticket.assignee.username|default:"frei" %}
+          {% include "tickets/_plan_card.html" with extra=item.assignee_name|default:"frei" %}
         {% empty %}
           <p class="muted small">Tickets aus „Noch nicht geplant“ hierher ziehen. Aus dem Pool nimmt sich jeder Bearbeiter selbst, was er erledigt.</p>
         {% endfor %}
@@ -93,7 +93,7 @@
       <h2>Noch nicht geplant ({{ backlog|length }})</h2>
       <p class="muted small">Karte auf einen Tag ziehen, um sie einzuplanen. Hierher zurückziehen, um die Planung aufzuheben.</p>
       {% for item, ticket in backlog %}
-        {% include "tickets/_plan_card.html" with extra=ticket.assignee.username|default:"nicht zugewiesen" %}
+        {% include "tickets/_plan_card.html" with extra=item.assignee_name|default:"nicht zugewiesen" %}
       {% empty %}
         <p class="muted">Alle offenen Tickets sind eingeplant.</p>
       {% endfor %}

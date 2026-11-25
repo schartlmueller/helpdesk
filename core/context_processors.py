@@ -8,8 +8,37 @@ from .models import Announcement
 from .orgs import membership_of
 
 
+# Welcher Eintrag der Seitenleiste zur aufgerufenen Seite gehört.
+# Reihenfolge zählt: der erste passende Anfang gewinnt.
+NAV_SECTIONS = [
+    ("dashboard", "dashboard"),
+    ("tickets:pool", "pool"),
+    ("tickets:planner", "planner"),
+    ("tickets:absence", "planner"),
+    ("tickets:recurring", "recurring"),
+    ("tickets:times", "times"),
+    ("tickets:stats", "stats"),
+    ("tickets:service_report", "report"),
+    ("tickets:", "tickets"),
+    ("kb:drafts", "drafts"),
+    ("kb:", "kb"),
+    ("projects:", "projects"),
+    ("announcement", "announcements"),
+    ("organization", "organizations"),
+]
+
+
+def _active_section(request):
+    match = getattr(request, "resolver_match", None)
+    name = match.view_name if match else ""
+    for prefix, section in NAV_SECTIONS:
+        if name.startswith(prefix):
+            return section
+    return ""
+
+
 def nav(request):
-    context = {"sso_enabled": settings.SSO_ENABLED}
+    context = {"sso_enabled": settings.SSO_ENABLED, "nav_active": _active_section(request)}
     user = getattr(request, "user", None)
     if user is None or not user.is_authenticated:
         return context

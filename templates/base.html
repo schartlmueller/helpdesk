@@ -4,63 +4,86 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Helpdesk{% endblock %}</title>
+  <script>
+    /* Gewähltes Farbschema anwenden, bevor die Seite gezeichnet wird */
+    try {
+      var t = localStorage.getItem("helpdesk-theme");
+      if (t === "dark" || t === "light") { document.documentElement.dataset.theme = t; }
+    } catch (e) {}
+  </script>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body>
+<body class="{% if user.is_authenticated %}app{% else %}guest{% endif %}">
 {% if user.is_authenticated %}
-<header class="topbar">
+<aside class="sidebar" id="sidebar">
   <a class="brand" href="{% url 'dashboard' %}">Helpdesk</a>
-  <button class="menu-toggle" type="button" aria-label="Menü" aria-expanded="false">☰</button>
-  <nav>
-    <a href="{% url 'dashboard' %}">Übersicht</a>
-    <a href="{% url 'tickets:list' %}">Tickets</a>
-    <a href="{% url 'kb:list' %}">Wissensbasis</a>
+  <nav aria-label="Hauptmenü">
+    <a class="nav-link{% if nav_active == 'dashboard' %} active{% endif %}" href="{% url 'dashboard' %}">Übersicht</a>
+    <a class="nav-link{% if nav_active == 'tickets' %} active{% endif %}" href="{% url 'tickets:list' %}">Tickets</a>
     {% if user.is_staff %}
-      <a href="{% url 'kb:drafts' %}">Entwürfe{% if kb_draft_count %} <span class="count">{{ kb_draft_count }}</span>{% endif %}</a>
-      <a href="{% url 'projects:list' %}">Projekte</a>
-      <a href="{% url 'tickets:pool' %}">Wochenpool</a>
-      <a href="{% url 'tickets:planner' %}">Planung</a>
-      <a href="{% url 'tickets:times' %}">Zeiten</a>
-      <details class="more">
-        <summary>Mehr</summary>
-        <div class="more-menu">
-          <a href="{% url 'announcements' %}">Störungsmeldungen</a>
-          <a href="{% url 'organizations' %}">Organisationen</a>
-          <a href="{% url 'tickets:service_report' %}">Leistungsnachweis</a>
-          <a href="{% url 'tickets:recurring' %}">Wiederkehrende Tickets</a>
-          <a href="{% url 'tickets:stats' %}">Statistik</a>
-          <a href="{% url 'admin:index' %}">Verwaltung</a>
-        </div>
-      </details>
+      <a class="nav-link{% if nav_active == 'pool' %} active{% endif %}" href="{% url 'tickets:pool' %}">Wochenpool</a>
+      <a class="nav-link{% if nav_active == 'planner' %} active{% endif %}" href="{% url 'tickets:planner' %}">Planung</a>
+      <a class="nav-link{% if nav_active == 'times' %} active{% endif %}" href="{% url 'tickets:times' %}">Zeiten</a>
+    {% endif %}
+
+    <div class="nav-label">Wissen</div>
+    <a class="nav-link{% if nav_active == 'kb' %} active{% endif %}" href="{% url 'kb:list' %}">Wissensbasis</a>
+    {% if user.is_staff %}
+      <a class="nav-link{% if nav_active == 'drafts' %} active{% endif %}" href="{% url 'kb:drafts' %}">Entwürfe{% if kb_draft_count %} <span class="count">{{ kb_draft_count }}</span>{% endif %}</a>
+
+      <div class="nav-label">Projekte</div>
+      <a class="nav-link{% if nav_active == 'projects' %} active{% endif %}" href="{% url 'projects:list' %}">Projekte</a>
+
+      <div class="nav-label">Auswertung</div>
+      <a class="nav-link{% if nav_active == 'stats' %} active{% endif %}" href="{% url 'tickets:stats' %}">Statistik</a>
+      <a class="nav-link{% if nav_active == 'report' %} active{% endif %}" href="{% url 'tickets:service_report' %}">Leistungsnachweis</a>
+
+      <div class="nav-label">Einrichtung</div>
+      <a class="nav-link{% if nav_active == 'recurring' %} active{% endif %}" href="{% url 'tickets:recurring' %}">Wiederkehrende Tickets</a>
+      <a class="nav-link{% if nav_active == 'announcements' %} active{% endif %}" href="{% url 'announcements' %}">Störungsmeldungen</a>
+      <a class="nav-link{% if nav_active == 'organizations' %} active{% endif %}" href="{% url 'organizations' %}">Organisationen</a>
+      <a class="nav-link" href="{% url 'admin:index' %}">Verwaltung</a>
     {% endif %}
   </nav>
-  <div class="topbar-right">
+</aside>
+<div class="backdrop" aria-hidden="true"></div>
+{% endif %}
+<div class="main-col">
+{% if user.is_authenticated %}
+  <header class="topbar">
+    <button class="menu-toggle" type="button" aria-label="Menü" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <form class="search" method="get" action="{% url 'tickets:list' %}" role="search">
+      <input type="hidden" name="status" value="all">
+      <input type="search" name="q" placeholder="Tickets durchsuchen" aria-label="Tickets durchsuchen">
+    </form>
+    <span class="spacer"></span>
     {% if running_entry %}
       <a class="running-chip" href="{{ running_entry.target.get_absolute_url }}" title="Deine Uhr läuft">⏱ {{ running_entry.target_label|truncatechars:28 }}</a>
     {% endif %}
     <a class="btn primary small" href="{% url 'tickets:create' %}">Neues Ticket</a>
+    <button class="theme-toggle" type="button" title="Hell oder dunkel" aria-label="Zwischen hellem und dunklem Design wechseln">◐</button>
     <a class="who" href="{% url 'password_change' %}" title="Passwort ändern">{{ user.get_full_name|default:user.username }}</a>
     <form method="post" action="{% url 'logout' %}">{% csrf_token %}
       <button class="linklike" type="submit">Abmelden</button>
     </form>
-  </div>
-</header>
-{% for a in announcements %}
-  <div class="announcement level-{{ a.level }}">
-    <strong>{{ a.get_level_display }}: {{ a.title }}</strong>
-    {% if a.text %}<span>{{ a.text|urlize|linebreaksbr }}</span>{% endif %}
-    {% if user.is_staff and a.organization %}<span class="muted">(nur {{ a.organization }})</span>{% endif %}
-  </div>
-{% endfor %}
-{% endif %}
-<main class="page">
-  {% if messages %}
-    <div class="messages">
-      {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+  </header>
+  {% for a in announcements %}
+    <div class="announcement level-{{ a.level }}">
+      <strong>{{ a.get_level_display }}: {{ a.title }}</strong>
+      {% if a.text %}<span>{{ a.text|urlize|linebreaksbr }}</span>{% endif %}
+      {% if user.is_staff and a.organization %}<span class="muted">(nur {{ a.organization }})</span>{% endif %}
     </div>
-  {% endif %}
-  {% block content %}{% endblock %}
-</main>
+  {% endfor %}
+{% endif %}
+  <main class="page">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
 <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>

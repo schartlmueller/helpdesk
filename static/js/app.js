@@ -1,12 +1,32 @@
 (function () {
   "use strict";
 
-  // --- Menü auf kleinen Bildschirmen ----------------------------------------
+  // --- Seitenleiste auf kleinen Bildschirmen ein- und ausblenden ------------
   var menuButton = document.querySelector(".menu-toggle");
+  var setMenu = function (open) {
+    document.body.classList.toggle("menu-open", open);
+    if (menuButton) { menuButton.setAttribute("aria-expanded", open ? "true" : "false"); }
+  };
   if (menuButton) {
     menuButton.addEventListener("click", function () {
-      var open = document.body.classList.toggle("menu-open");
-      menuButton.setAttribute("aria-expanded", open ? "true" : "false");
+      setMenu(!document.body.classList.contains("menu-open"));
+    });
+  }
+  var backdrop = document.querySelector(".backdrop");
+  if (backdrop) {
+    backdrop.addEventListener("click", function () { setMenu(false); });
+  }
+
+  // --- Helles oder dunkles Design; die Wahl merkt sich der Browser -----------
+  var themeButton = document.querySelector(".theme-toggle");
+  if (themeButton) {
+    themeButton.addEventListener("click", function () {
+      var root = document.documentElement;
+      var dark = root.dataset.theme
+        ? root.dataset.theme === "dark"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
+      root.dataset.theme = dark ? "light" : "dark";
+      try { localStorage.setItem("helpdesk-theme", root.dataset.theme); } catch (e) {}
     });
   }
 

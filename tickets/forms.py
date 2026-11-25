@@ -82,6 +82,11 @@ def clean_address_list(value):
     return ", ".join(dict.fromkeys(addresses))
 
 
+def user_label(user):
+    """Anzeigename in Auswahlfeldern: voller Name, sonst Benutzername."""
+    return user.get_full_name() or user.username
+
+
 def add_requester_fields(form):
     """Felder, mit denen Bearbeiter ein Ticket für jemand anderen erfassen,
     z. B. nach einem Anruf."""
@@ -96,6 +101,7 @@ def add_requester_fields(form):
         required=False,
         help_text="Für Personen ohne Konto. Das Konto wird automatisch angelegt.",
     )
+    form.fields["requester"].label_from_instance = user_label
     form.order_fields(["requester", "requester_email"])
 
 
@@ -148,6 +154,7 @@ class TicketUpdateForm(forms.ModelForm):
         self.fields["assignee"].queryset = get_user_model().objects.filter(
             is_staff=True, is_active=True
         )
+        self.fields["assignee"].label_from_instance = user_label
         # "Gelöst" wird nur über das Lösungsformular gesetzt, damit immer
         # eine Lösungsbeschreibung vorhanden ist.
         if self.instance.status != Ticket.Status.RESOLVED:
